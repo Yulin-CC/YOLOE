@@ -7,7 +7,6 @@ DOCLINES = (__doc__ or '')
 
 import os.path
 import sys
-import pip
 
 import setuptools
 

@@ -365,6 +365,9 @@ def scale_image(masks, im0_shape, ratio_pad=None):
     Returns:
         masks (np.ndarray): The masks that are being returned with shape [h, w, num].
     """
+    # Handle invalid/im0_shape (e.g., corrupt images in dataset)
+    if not im0_shape or len(im0_shape) < 2 or im0_shape[0] <= 0 or im0_shape[1] <= 0:
+        return masks
     # Rescale coordinates (xyxy) from im1_shape to im0_shape
     im1_shape = masks.shape
     if im1_shape[:2] == im0_shape[:2]:
@@ -381,7 +384,20 @@ def scale_image(masks, im0_shape, ratio_pad=None):
     if len(masks.shape) < 2:
         raise ValueError(f'"len of masks shape" should be 2 or 3, but got {len(masks.shape)}')
     masks = masks[top:bottom, left:right]
-    masks = cv2.resize(masks, (im0_shape[1], im0_shape[0]))
+
+    # Handle empty crops from corrupt images (top >= bottom or left >= right)
+    if masks.size == 0 or masks.shape[0] <= 0 or masks.shape[1] <= 0:
+        return masks
+
+    # Defensive: force int types for cv2.resize (handles numpy/torch dtype edge cases)
+    dst_w = int(im0_shape[1])
+    dst_h = int(im0_shape[0])
+    if dst_w <= 0 or dst_h <= 0:
+        return masks
+    try:
+        masks = cv2.resize(masks, (dst_w, dst_h))
+    except cv2.error:
+        return masks
     if len(masks.shape) == 2:
         masks = masks[:, :, None]
 

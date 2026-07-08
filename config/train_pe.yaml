@@ -1,0 +1,120 @@
+# YOLOE PE 微调训练配置
+# 优先级：0-QuickStart/*.sh CLI 参数 > 本文件 > ultralytics/cfg/default.yaml
+# 推理 / 验证参数见 config/default_notrain.yaml
+# =============================================================================
+# README
+# =============================================================================
+# 训练模式：
+# linear： 仅训练 PE 层（cv3.*.2），其余全冻结 | 适合：数据量少（百张级）、快速验证、保留开放词汇能力
+#          - 推荐参数设置：epochs=10，close_mosaic=5
+# full：   全参微调，不冻结任何层 | 适合：数据量充足（千张级以上）、追求最高精度
+#          - 推荐参数设置：epochs=80，close_mosaic=10
+# visual： 仅训练 SAVPE 模块，其余全冻结 | 适合：已有 text 预训练权重，想增加视觉提示词能力
+#          - 推荐参数设置：epochs=2，close_mosaic=2
+# =============================================================================
+
+
+# ========== 训练参数 ==========
+train:
+
+  defaults:
+
+    # ── 基础配置 ──
+    task:     "segment"                    # [基础] YOLO 任务：detect | segment | classify | pose | obb
+    mode:     "linear"                     # [模式] 训练模式：linear | full | visual | scratch
+    model:    "weights/yoloe-11s-seg.pt"   # [模型] 权重路径（.pt → 微调；.yaml → scratch）
+    data:     "data/0-Person.yaml"         # [数据集] YOLO 格式 yaml
+    project:  "exp01"                      # [项目] 实验名称 → runs/0-train/<project>/
+    name:     null                         # [基础] 实验子目录名（留空则与 project 相同）
+    device:   "0"                          # [设备] GPU ID；多卡 DDP 如 "0,1,2,3"
+    workers:  4                          # [基础] DataLoader workers（每卡）
+    seed:     0                            # [基础] 随机种子
+    deterministic: true                    # [基础] 确定性模式（可复现，略降速）
+    verbose:  true                         # [基础] 打印详细日志
+    cfg:      null                         # [基础] 覆盖 ultralytics/cfg/default.yaml 的外部配置路径
+
+    # ── 训练循环 ──
+    epochs:       10          # [训练循环] 训练轮数（full 建议 80，visual 建议 2）
+    time:         null        # [训练循环] 按小时训练（设置后覆盖 epochs）
+    batch:        16          # [训练循环] 全局 batch（DDP 按卡数均分）
+    imgsz:        640         # [训练循环] 输入图像尺寸
+    amp:          true        # [训练循环] 混合精度 FP16
+    patience:     50          # [训练循环] 早停轮数（0 = 关闭）
+    save:         true        # [训练循环] 保存 checkpoint 与预测结果
+    save_period:  -1          # [训练循环] 每 N 轮额外保存（-1 = 仅 best/last）
+    cache:        false       # [训练循环] 数据缓存：false | true(ram) | disk
+    resume:       false       # [训练循环] 从 last.pt 断点续训
+    pretrained:   true        # [训练循环] 加载预训练权重（bool 或权重路径 str）
+    exist_ok:     false       # [训练循环] 是否覆盖已有实验目录
+    close_mosaic: 5           # [训练循环] 最后 N epoch 关闭 Mosaic（full 建议 10）
+    val_interval: 1           # [训练循环] 每 N epoch 验证一次
+    fraction:     1.0         # [训练循环] 使用训练集的比例（0~1）
+    profile:      false       # [训练循环] 训练时 profile ONNX/TensorRT 速度
+    freeze:       null        # [训练循环] 冻结前 N 层或指定层索引列表
+    multi_scale:  false       # [训练循环] 多尺度训练
+    single_cls:   false       # [训练循环] 多类数据按单类训练
+    rect:         false       # [训练循环] 矩形训练/验证
+    cos_lr:       false       # [训练循环] 余弦学习率调度
+
+    # ── 验证/测试（训练期间）──
+    val:          true        # [验证] 训练过程中是否验证
+    split:        "val"       # [验证] 验证集划分：val | test | train
+    save_json:    false       # [验证] 保存 COCO 格式 JSON 结果
+    save_hybrid:  false       # [验证] 保存 hybrid 标签（GT + 预测）
+    conf:         null        # [验证] 置信度阈值（val 默认 0.001）
+    iou:          0.7         # [验证] NMS IoU 阈值
+    max_det:      300         # [验证] 每张图最大检测数
+    half:         false       # [验证] FP16 推理
+    dnn:          false       # [验证] OpenCV DNN 推理 ONNX
+    plots:        true        # [验证] 保存训练/验证曲线与可视化图
+
+    # ── 优化器 ──
+    optimizer:       "AdamW"  # [优化器] SGD | Adam | AdamW | auto 等
+    lr0:             0.001    # [优化器] 初始学习率（PE 微调建议 1e-3）
+    lrf:             0.01     # [优化器] 终止 lr = lr0 × lrf
+    momentum:        0.9      # [优化器] SGD momentum / Adam β1
+    weight_decay:    0.025    # [优化器] 权重衰减
+    warmup_epochs:   3.0      # [优化器] Warmup 轮数
+    warmup_bias_lr:  0.0      # [优化器] Warmup 偏置初始 lr
+    warmup_momentum: 0.8      # [优化器] Warmup 初始动量
+    nbs:             64       # [优化器] 名义 batch size（用于 loss 缩放）
+
+    # ── 损失函数 ──
+    box:  7.5                 # [损失] 框回归损失权重
+    cls:  0.5                 # [损失] 分类损失权重
+    dfl:  1.5                 # [损失] DFL 分布焦点损失权重
+    pose: 12.0                # [损失] 姿态损失权重（pose 任务）
+    kobj: 1.0                 # [损失] 关键点 obj 损失权重（pose 任务）
+
+    # ── 分割任务 ──
+    overlap_mask: false       # [分割] 训练时将实例 mask 合并为单张图 mask
+    mask_ratio:   4           # [分割] mask 下采样比例
+
+    # ── 分类任务 ──
+    dropout: 0.0              # [分类] Dropout 正则化概率
+
+    # ── 数据增强 ──
+    hsv_h:            0.015   # [数据增强] HSV 色调扰动（比例）
+    hsv_s:            0.7     # [数据增强] HSV 饱和度扰动
+    hsv_v:            0.4     # [数据增强] HSV 明度扰动
+    degrees:          0.0     # [数据增强] 旋转角度（±deg）
+    translate:        0.1     # [数据增强] 平移（±比例）
+    scale:            0.5     # [数据增强] 缩放（±gain）
+    shear:            0.0     # [数据增强] 剪切（±deg）
+    perspective:      0.0     # [数据增强] 透视变换（0~0.001）
+    flipud:           0.0     # [数据增强] 上下翻转概率
+    fliplr:           0.5     # [数据增强] 左右翻转概率
+    bgr:              0.0     # [数据增强] BGR 通道随机概率
+    mosaic:           1.0     # [数据增强] Mosaic 拼接概率（数据少时可降到 0.5）
+    mixup:            0.0     # [数据增强] Mixup 概率
+    copy_paste:       0.0     # [数据增强] Copy-Paste 概率（segment）
+    copy_paste_mode:  "flip"  # [数据增强] copy_paste 方式：flip | mixup
+    auto_augment:     "randaugment"  # [数据增强] 分类自动增强
+    erasing:          0.4     # [数据增强] 分类随机擦除概率
+    crop_fraction:    1.0     # [数据增强] 分类裁剪比例
+
+    # ── YOLOE 专用 ──
+    text_model:    "mobileclip:blt"   # [YOLOE] 文本编码器
+    load_vp:       false              # [YOLOE] visual 模式是否加载视觉提示词
+    train_pe_path: null               # [YOLOE] 预生成 PE 权重路径（linear/full 模式）
+    is_lvis:       null               # [YOLOE] 强制 LVIS 官方 AP 评估

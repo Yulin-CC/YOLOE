@@ -46,9 +46,11 @@ class MobileCLIP(TextModel):
     }
     
     def __init__(self, size, device):
+        import os
         super().__init__()
         config = self.config_size_map[size]
-        self.model = mobileclip.create_model_and_transforms(f'mobileclip_{config}', pretrained=f'mobileclip_{size}.pt', device=device)[0]
+        pretrained = os.environ.get("MOBILECLIP_PATH", f'mobileclip_{size}.pt')
+        self.model = mobileclip.create_model_and_transforms(f'mobileclip_{config}', pretrained=pretrained, device=device)[0]
         self.tokenizer = mobileclip.get_tokenizer(f'mobileclip_{config}')
         self.to(device)
         self.device = device

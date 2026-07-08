@@ -1,7 +1,11 @@
 import argparse
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
+
+# 避免 tools/lvis/ 目录遮蔽真正的 lvis 包
+sys.path = [p for p in sys.path if not p.endswith(("tools", "tools/"))]
 
 from lvis import LVIS, LVISResults, LVISEval
 from ultralytics.utils import LOGGER

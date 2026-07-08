@@ -1,0 +1,72 @@
+# ========== 推理参数 ==========
+predict:
+  device:         "cuda:0"                      # [设备] 推理设备
+  weights:        "weights/yoloe-11s-seg.pt"    # [模型] 预训练权重（本地路径）
+  source:         "ultralytics/assets/bus.jpg"  # [输入] 图片/视频/目录/URL
+  names:          ["person", "dog", "cat"]      # [推理] 文本提示词类别（text 模式）
+  mode:           "text"                        # [推理] 推理模式：text | visual | promptfree
+  conf:           0.25                          # [推理] 置信度阈值（漏检时调低，如 0.1）
+  iou:            0.7                           # [推理] NMS IoU 阈值
+  imgsz:          640                           # [推理] 输入图像尺寸
+  half:           false                         # [推理] FP16 推理
+  dnn:            false                         # [推理] OpenCV DNN 推理 ONNX
+  vid_stride:     1                            # [推理] 视频帧步长
+  stream_buffer:  false                        # [推理] 流式输入缓冲全部帧（true）或仅最新帧（false）
+  visualize:      false                        # [推理] 可视化中间特征
+  augment:        false                        # [推理] 对输入做 TTA 增强
+  agnostic_nms:   false                        # [推理] 类别无关 NMS
+  classes:        null                          # [推理] 按类别过滤，如 0 或 [0,2,3]
+  retina_masks:   false                        # [推理] 高分辨率分割 mask
+  embed:          null                          # [推理] 返回指定层的特征向量
+  max_det:        300                           # [推理] 每张图最大检测数
+  show:           false                         # [可视化] 弹窗显示结果
+  save:           true                          # [可视化] 保存预测结果
+  save_frames:    false                        # [可视化] 保存视频逐帧图片
+  save_txt:       false                        # [可视化] 保存 .txt 标签
+  save_conf:      false                        # [可视化] txt 中附带置信度
+  save_crop:      false                        # [可视化] 保存裁剪目标图
+  show_labels:    true                         # [可视化] 显示类别标签
+  show_conf:      true                         # [可视化] 显示置信度
+  show_boxes:     true                         # [可视化] 显示检测框
+  line_width:     null                         # [可视化] 框线宽（留空则按图尺寸缩放）
+
+
+# ========== 评估参数 ==========
+eval:
+  device:     "0"                                    # [设备] GPU ID
+  weights:    "weights/yoloe-11s-seg.pt"             # [模型] 评估权重
+  mobileclip: "weights/mobileclip_blt.pt"            # [模型] MobileCLIP 权重（text 模式必需）
+  mode:       "text"                                 # [评估] text | visual | promptfree | coco
+  data:       "ultralytics/cfg/datasets/lvis.yaml"   # [数据集] 数据集配置
+  split:      "minival"                              # [评估] minival | val
+  fixed_ap:   true                                   # [评估] true = max_det 1000 + Fixed AP；false = 标准 AP
+  batch:      1                                      # [评估] 批大小（评估建议 1）
+  imgsz:      640                                    # [评估] 输入图像尺寸
+  conf:       null                                   # [评估] 置信度阈值（留空用 Ultralytics 默认）
+  iou:        0.7                                    # [评估] NMS IoU 阈值
+  max_det:    null                                   # [评估] 留空则 fixed_ap 时 1000，否则 300
+  half:       false                                  # [评估] FP16 推理
+  dnn:        false                                  # [评估] OpenCV DNN 推理
+  save_json:  false                                  # [评估] 保存 COCO JSON
+  plots:      true                                   # [评估] 保存 val_batch*_*.jpg、混淆矩阵等
+  verbose:    true                                   # [评估] 打印详细日志
+
+
+# ========== 导出参数 ==========
+export:
+  format:     "torchscript"   # [导出] 目标格式（onnx | engine | coreml 等）
+  imgsz:      640             # [导出] 输入尺寸
+  keras:      false           # [导出] 使用 Keras
+  optimize:   false           # [导出] TorchScript 移动端优化
+  int8:       false           # [导出] INT8 量化（CoreML/TF）
+  dynamic:    false           # [导出] 动态轴（ONNX/TF/TensorRT）
+  simplify:   true            # [导出] ONNX 简化（onnxslim）
+  opset:      null            # [导出] ONNX opset 版本
+  workspace:  null            # [导出] TensorRT workspace（GiB）
+  nms:        false           # [导出] CoreML 内置 NMS
+  half:       false           # [导出] FP16 导出
+
+
+# ========== 跟踪参数 ==========
+tracker:
+  tracker: "botsort.yaml"     # [跟踪] 跟踪器配置：botsort.yaml | bytetrack.yaml

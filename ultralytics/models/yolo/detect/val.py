@@ -75,7 +75,11 @@ class DetectionValidator(BaseValidator):
             and "coco" in val
             and (val.endswith(f"{os.sep}val2017.txt") or val.endswith(f"{os.sep}test-dev2017.txt"))
         )  # is COCO
-        self.is_lvis = isinstance(val, str) and "lvis" in val and not self.is_coco  # is LVIS
+        self.is_lvis = (
+            bool(getattr(self.args, "is_lvis", False)) and not self.is_coco
+            if getattr(self.args, "is_lvis", None) is not None
+            else isinstance(val, str) and "lvis" in val.lower() and not self.is_coco
+        )  # is LVIS
         self.class_map = converter.coco80_to_coco91_class() if self.is_coco else list(range(len(model.names)))
         self.args.save_json |= self.args.val and (self.is_coco or self.is_lvis)  # run final val
         self.names = model.names

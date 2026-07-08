@@ -130,11 +130,16 @@ class SegmentationValidator(DetectionValidator):
             stat["pred_cls"] = predn[:, 5]
 
             # Evaluate
-            if nl:
+            ori_shape = pbatch["ori_shape"]
+            valid_shape = ori_shape[0] > 0 and ori_shape[1] > 0
+            if nl and valid_shape:
                 stat["tp"] = self._process_batch(predn, bbox, cls)
                 stat["tp_m"] = self._process_batch(
                     predn, bbox, cls, pred_masks, gt_masks, self.args.overlap_mask, masks=True
                 )
+            elif nl:
+                # corrupt image: still record box metrics only
+                stat["tp"] = self._process_batch(predn, bbox, cls)
             if self.args.plots:
                 self.confusion_matrix.process_batch(predn, bbox, cls)
 
@@ -145,8 +150,8 @@ class SegmentationValidator(DetectionValidator):
             if self.args.plots and self.batch_i < 3:
                 self.plot_masks.append(pred_masks[:15].cpu())  # filter top 15 to plot
 
-            # Save
-            if self.args.save_json:
+            # Save (skip mask-related outputs for corrupt/empty images)
+            if self.args.save_json and valid_shape:
                 self.pred_to_json(
                     predn,
                     batch["im_file"][si],
@@ -156,7 +161,7 @@ class SegmentationValidator(DetectionValidator):
                         ratio_pad=batch["ratio_pad"][si],
                     ),
                 )
-            if self.args.save_txt:
+            if self.args.save_txt and valid_shape:
                 self.save_one_txt(
                     predn,
                     pred_masks,
@@ -278,6 +283,9 @@ class SegmentationValidator(DetectionValidator):
         with ThreadPool(NUM_THREADS) as pool:
             rles = pool.map(single_encode, pred_masks)
         for i, (p, b) in enumerate(zip(predn.tolist(), box.tolist())):
+            # Skip detections that don't have a corresponding RLE mask
+            if i >= len(rles):
+                continue
             self.jdict.append(
                 {
                     "image_id": image_id,

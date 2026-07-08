@@ -4,7 +4,7 @@ from torch.nn import functional as F
 from ultralytics.models.yolo.detect import DetectionValidator
 from ultralytics.models.yolo.segment import SegmentationValidator
 from ultralytics.utils.torch_utils import smart_inference_mode, select_device
-from ultralytics.utils import LOGGER, TQDM
+from ultralytics.utils import LOGGER, TQDM, ops
 from ultralytics.data import build_dataloader, build_yolo_dataset
 from ultralytics.data.utils import check_det_dataset
 from ultralytics.models.yolo.model import YOLOEModel
@@ -47,7 +47,7 @@ class YOLOEValidatorMixin:
         if "visuals" in batch:
             batch["visuals"] = batch["visuals"].to(batch["img"].device)
         return batch
-    
+
     def get_lvis_train_vps_loader(self, model):
         lvis_train_vps_data =  check_det_dataset('lvis_train_vps.yaml')
         lvis_train_vps_loader = build_dataloader(
@@ -84,6 +84,7 @@ class YOLOEValidatorMixin:
             
             if not self.args.load_vp:
                 LOGGER.info("Validate using the text prompt.")
+                LOGGER.info(f"Encoding {len(names)} text prompts...")
                 tpe = model.get_text_pe(names)
                 model.set_classes(names, tpe)
                 tp_stats = super().__call__(trainer, model)
@@ -128,7 +129,18 @@ class YOLOEValidatorMixin:
                 return super().__call__(trainer, model)
 
 class YOLOEDetectValidator(YOLOEValidatorMixin, DetectionValidator):
-    pass
+    def postprocess(self, preds):
+        """NMS 时传入正确 nc，避免 seg 模型输出的 mask 系数被误算作类别数."""
+        return ops.non_max_suppression(
+            preds,
+            self.args.conf,
+            self.args.iou,
+            labels=self.lb,
+            multi_label=True,
+            agnostic=self.args.single_cls or self.args.agnostic_nms,
+            max_det=self.args.max_det,
+            nc=self.nc,
+        )
 
 class YOLOESegValidator(YOLOEValidatorMixin, SegmentationValidator):
     pass

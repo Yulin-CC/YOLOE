@@ -1,0 +1,75 @@
+# SAM3 默认配置
+# 脚本中若传入同名参数（如 0-QuickStart/*.sh），脚本参数优先于此文件
+# =============================================================================
+# 调参思路
+# =============================================================================
+# 【防止过拟合】
+# A. 先调 lr_scale（降低全局学习率）
+# B. 再调 lr_language_backbone_mult（冻结或减小语言编码器 lr）
+#
+# 【防止曲线震荡】
+# A. 先调 batch_size × gradient_accumulation_steps
+# B. 再调 weight_decay
+# =============================================================================
+
+# ========== 数据集参数 ==========
+dataset:
+  config: "data/0-sam3.yaml"       # 数据集路径配置（含 train/val img_folder + ann_file）
+
+# ========== 训练参数 ==========
+train:
+  project: "exp01"                 # [项目] 训练任务名（用于 runs 目录命名）
+  run_base_dir: "runs/0-train"     # [项目] 训练输出根目录
+  dev_id: 0                        # [设备] 单卡训练时的 GPU ID（多卡用逗号分隔，如 0,1）
+  base_config: local_ft            # Hydra 配置名（sam3/train/configs/ 下，不带 .yaml）
+  epochs: 20                       # [训练参数] 训练轮数
+  batch_size: 8                    # [训练参数] 每卡 batch size
+  num_gpus: 1                      # [训练参数] GPU 数量
+  lr_scale: 0.1                    # [训练参数] 全局学习率缩放系数
+  weight_decay: 0.1                # [训练参数] AdamW 权重衰减
+  gradient_accumulation_steps: 1   # [训练参数] 梯度累积步数
+  amp_dtype: bfloat16              # [训练参数] 混合精度：bfloat16 / float16
+  num_train_workers: 4             # [训练参数] 训练 DataLoader 子进程数
+  num_val_workers: 0               # [训练参数] 验证 DataLoader 子进程数
+  checkpoint: null                 # [模型] 本地权重路径；null = 从 HuggingFace 下载
+  enable_segmentation: false       # [预留] 分割训练暂未启用；微调固定 detect-only，推理可用预训练 mask 头
+  lr_transformer_mult: 8.0e-4          # [学习率] Decoder lr 系数（× lr_scale）
+  lr_vision_backbone_mult: 2.5e-4      # [学习率] 视觉编码器 lr 系数
+  lr_language_backbone_mult: 5.0e-5    # [学习率] 语言编码器 lr 系数
+  lrd_vision_backbone: 0.9             # [学习率] 视觉编码器 layer decay
+  skip_saving_ckpts: false         # [保存] true 时跳过 checkpoint 保存
+  save_freq: 0                     # [保存] 每 N 个 epoch 保存一次；0 = 只保存最后一次
+  val_epoch_freq: 5                # [验证] 每 N 个 epoch 验证一次
+ #--- 数据增强----------------------#
+  # 数据过滤
+  filter_crowds: true              # [数据增强] 过滤 iscrowd=1 的 crowd 标注
+  filter_empty_targets: true       # [数据增强] 过滤面积为 0 的空目标
+  filter_too_many_out: true        # [数据增强] 过滤单 query 目标数超阈值的样本
+  max_ann_per_img: 200             # [数据增强] 单 query 最大目标数（配合 filter_too_many_out）
+  # 几何增强
+  enable_bbox_noise: true          # [数据增强] 训练框随机扰动（RandomizeInputBbox）
+  bbox_noise_std: 0.1              # [数据增强] 框噪声标准差（相对框尺寸比例）
+  bbox_noise_max: 20               # [数据增强] 框噪声最大像素偏移
+  # 尺度增强
+  resolution: 1008                 # [数据增强] 输入分辨率（训练缩放上限 / 验证固定尺寸）
+  resize_min_size: 480             # [数据增强] 训练随机缩放最短边下限
+  random_resize: true              # [数据增强] 训练随机缩放（false 时固定为 resolution）
+  consistent_transform: false      # [数据增强] 同一样本多图共享相同缩放/填充参数
+  square: true                     # [数据增强] 缩放到正方形（改变长宽比）
+
+
+# ========== 推理参数 ==========
+predict:
+  dev_id: 0                        # [设备] 推理 GPU ID
+  checkpoint: "weights/sam3.pt"    # [模型] 权重路径；留空或 null = 从 HuggingFace 下载
+  text_prompt: "person"            # [推理参数] 文本提示词（逗号分隔多类）
+  conf: 0.25                       # [推理参数] 置信度阈值
+  half: true                       # [推理参数] 是否使用 FP16 推理
+  plot_boxes: false                # [可视化] 是否绘制检测框
+  plot_labels: true                # [可视化] 是否显示类别名称
+  plot_conf: true                  # [可视化] 是否显示置信度分数
+
+# ========== 评估参数 ==========
+eval:
+  gt_dir: "/path/to/sac_gold/gt"   # [验证参数] SAC-Gold GT json 文件目录
+  pred_dir: "/path/to/test/repro"  # [验证参数] 待评估预测结果目录

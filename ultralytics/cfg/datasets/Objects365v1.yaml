@@ -1,4 +1,4 @@
-path: ../datasets/Objects365v1
+path: /home/yulin/0-data/0-public/grounding/GEOAI-Objects365v1-2607-GD/Objects365_v1
 train: images/train
 val: null
 test: null

@@ -856,3 +856,8 @@ class v10Detect(Detect):
             for x in ch
         )
         self.one2one_cv3 = copy.deepcopy(self.cv3)
+
+
+# 兼容旧版权重（类名带 scale 后缀，如 yoloe-26s-seg.pt）
+YOLOEDetect26 = YOLOEDetect
+YOLOESegment26 = YOLOESegment

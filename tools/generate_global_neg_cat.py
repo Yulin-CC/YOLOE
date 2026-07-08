@@ -21,10 +21,10 @@ if __name__ == '__main__':
     os.environ["PYTHONHASHSEED"] = "0"
     cat_name_freq = defaultdict(int)
     
-    flickr_cache_path = Path('../datasets/flickr/annotations/final_flickr_separateGT_train_segm.cache')
+    flickr_cache_path = Path('/home/yulin/0-data/0-public/grounding/GEOAI-Flickr30k-2607-GD/flickr_train_segm.cache')
     obtain_cat_freq(flickr_cache_path, cat_name_freq)
 
-    mixed_grounding_cache_path = Path('../datasets/mixed_grounding/annotations/final_mixed_train_no_coco_segm.cache')
+    mixed_grounding_cache_path = Path('/home/yulin/0-data/0-public/grounding/GEOAI-GQA-2607-GD/gqa_train_segm.cache')
     obtain_cat_freq(mixed_grounding_cache_path, cat_name_freq)
 
     global_neg_cat = []
@@ -34,11 +34,11 @@ if __name__ == '__main__':
 
     print(len(global_neg_cat))
 
-    with open('tools/global_grounding_neg_cat.json', 'w') as f:
+    with open('config/vocab/global_grounding_neg_cat.json', 'w') as f:
         json.dump(global_neg_cat, f, indent=2)
     
     model = yaml_load('ultralytics/cfg/default.yaml')['text_model']
     global_neg_embeddings = generate_label_embedding(model, global_neg_cat)
-    os.makedirs(f'tools/{model}', exist_ok=True)
-    torch.save(global_neg_embeddings, f'tools/{model}/global_grounding_neg_embeddings.pt')
+    os.makedirs(f'config/{model}', exist_ok=True)
+    torch.save(global_neg_embeddings, f'config/{model}/global_grounding_neg_embeddings.pt')
         

@@ -313,17 +313,24 @@ class GroundingDataset(YOLODataset):
         instance_count = 0
         for label in labels:
             instance_count += label["bboxes"].shape[0]
-        
-        if "final_mixed_train_no_coco_segm" in self.json_file:
-            assert(instance_count == 3662344)
-        elif "final_mixed_train_no_coco" in self.json_file:
-            assert(instance_count == 3681235)
-        elif "final_flickr_separateGT_train_segm" in self.json_file:
-            assert(instance_count == 638214)
-        elif "final_flickr_separateGT_train" in self.json_file:
-            assert(instance_count == 640704)
-        else:
-            assert(False)
+
+        official_counts = {
+            "final_mixed_train_no_coco_segm": 3662344,
+            "final_mixed_train_no_coco": 3681235,
+            "final_flickr_separateGT_train_segm": 638214,
+            "final_flickr_separateGT_train": 640704,
+        }
+        for key, expected in official_counts.items():
+            if key in self.json_file:
+                assert instance_count == expected, (
+                    f"{key}: expected {expected} instances, got {instance_count}"
+                )
+                return
+
+        LOGGER.info(
+            f"Custom grounding dataset {Path(self.json_file).name}: "
+            f"{instance_count} instances (skip official count check)"
+        )
     
     def get_labels(self):
         """Loads annotations from a JSON file, filters, and normalizes bounding boxes for each image."""

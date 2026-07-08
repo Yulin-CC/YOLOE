@@ -1,0 +1,11 @@
+#【Grounding datasets】
+# Dataset Used: 2
+# Grounding entries: 2
+# Date：2026-07-07 16:43:26.751483
+
+train:
+  grounding_data:
+  - img_path: /home/yulin/0-data/0-public/grounding/GEOAI-Flickr30k-2607-GD/images
+    json_file: /home/yulin/0-data/0-public/grounding/GEOAI-Flickr30k-2607-GD/flickr_train_segm.json
+  - img_path: /home/yulin/0-data/0-public/grounding/GEOAI-GQA-2607-GD/images
+    json_file: /home/yulin/0-data/0-public/grounding/GEOAI-GQA-2607-GD/gqa_train_segm.json

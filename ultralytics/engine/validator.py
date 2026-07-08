@@ -102,6 +102,32 @@ class BaseValidator:
 
         self.plots = {}
         self.callbacks = _callbacks or callbacks.get_default_callbacks()
+        self.vloss = None
+
+    def _get_memory(self):
+        """Get accelerator memory utilization in GB (aligned with BaseTrainer)."""
+        if self.device.type == "mps":
+            memory = torch.mps.driver_allocated_memory()
+        elif self.device.type == "cpu":
+            memory = 0
+        else:
+            memory = torch.cuda.memory_reserved()
+        return memory / 1e9
+
+    def _set_train_style_progress(self, pbar, trainer, batch):
+        """Update val progress bar in the same format as training."""
+        loss_length = self.vloss.shape[0] if len(self.vloss.shape) else 1
+        losses = self.vloss if loss_length > 1 else torch.unsqueeze(self.vloss, 0)
+        pbar.set_description(
+            ("%11s" * 2 + "%11.4g" * (2 + loss_length))
+            % (
+                f"val {trainer.epoch + 1}/{trainer.epochs}",
+                f"{self._get_memory():.3g}G",
+                *losses,
+                batch["cls"].shape[0],
+                batch["img"].shape[-1],
+            )
+        )
 
     @smart_inference_mode()
     def __call__(self, trainer=None, model=None):
@@ -165,10 +191,20 @@ class BaseValidator:
             Profile(device=self.device),
             Profile(device=self.device),
         )
-        bar = TQDM(self.dataloader, desc=self.get_desc(), total=len(self.dataloader))
+        nb = len(self.dataloader)
         self.init_metrics(de_parallel(model))
         self.jdict = []  # empty before each val
-        for batch_i, batch in enumerate(bar):
+        self.vloss = None
+
+        if self.training:
+            LOGGER.info(f"\nValidating {nb} images ({trainer.epoch + 1}/{trainer.epochs})...")
+            pbar = TQDM(enumerate(self.dataloader), total=nb)
+            batch_iter = pbar
+        else:
+            pbar = None
+            batch_iter = enumerate(TQDM(self.dataloader, desc=self.get_desc(), total=nb))
+
+        for batch_i, batch in batch_iter:
             self.run_callbacks("on_val_batch_start")
             self.batch_i = batch_i
             # Preprocess
@@ -182,13 +218,21 @@ class BaseValidator:
             # Loss
             with dt[2]:
                 if self.training:
-                    self.loss += model.loss(batch, preds)[1]
+                    batch_loss = model.loss(batch, preds)[1]
+                    self.loss += batch_loss
+                    self.vloss = (
+                        (self.vloss * batch_i + batch_loss) / (batch_i + 1)
+                        if self.vloss is not None
+                        else batch_loss
+                    )
 
             # Postprocess
             with dt[3]:
                 preds = self.postprocess(preds)
 
             self.update_metrics(preds, batch)
+            if self.training and pbar is not None:
+                self._set_train_style_progress(pbar, trainer, batch)
             if self.args.plots and batch_i < 3:
                 self.plot_val_samples(batch, batch_i)
                 self.plot_predictions(batch, preds, batch_i)

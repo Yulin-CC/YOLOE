@@ -129,3 +129,4 @@ val_interval: 20
 text_model: mobileclip:blt
 load_vp: False
 train_pe_path: None
+is_lvis: # (bool, optional) force LVIS official AP evaluation; auto-detect from data path if unset

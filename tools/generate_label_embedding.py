@@ -48,8 +48,8 @@ def collect_detection_labels(yaml_path):
 if __name__ == '__main__':
     os.environ["PYTHONHASHSEED"] = "0"
     
-    flickr_cache = '../datasets/flickr/annotations/final_flickr_separateGT_train_segm.cache'
-    mixed_grounding_cache = '../datasets/mixed_grounding/annotations/final_mixed_train_no_coco_segm.cache'
+    flickr_cache = '/home/yulin/0-data/0-public/grounding/GEOAI-Flickr30k-2607-GD/flickr_train_segm.cache'
+    mixed_grounding_cache = '/home/yulin/0-data/0-public/grounding/GEOAI-GQA-2607-GD/gqa_train_segm.cache'
     objects365v1_yaml = 'ultralytics/cfg/datasets/Objects365v1.yaml'
     
     all_cat_names = set()
@@ -66,5 +66,5 @@ if __name__ == '__main__':
     for name, feat in zip(all_cat_names, all_cat_feats):
         cat_name_feat_map[name] = feat
     
-    os.makedirs(f'tools/{model}', exist_ok=True)
-    torch.save(cat_name_feat_map, f'tools/{model}/train_label_embeddings.pt')
+    os.makedirs(f'config/{model}', exist_ok=True)
+    torch.save(cat_name_feat_map, f'config/{model}/train_label_embeddings.pt')

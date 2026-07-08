@@ -2246,16 +2246,49 @@ class RandomLoadText:
         self.max_samples = max_samples
         self.padding = padding
         self.padding_value = padding_value
-        
-        import json
-        with open('tools/global_grounding_neg_cat.json', 'r') as f:
-            self.global_grounding_neg_cats = np.array(json.load(f))
-        
-        self.global_grounding_neg_embeddings = torch.load(f'tools/{text_model}/global_grounding_neg_embeddings.pt')
-        
-        self.train_label_embeddings = torch.load(f'tools/{text_model}/train_label_embeddings.pt')
-        
 
+        neg_vocab_path = self._resolve_neg_vocab_path()
+        import json
+        with open(neg_vocab_path, "r") as f:
+            self.global_grounding_neg_cats = np.array(json.load(f))
+
+        embed_dir = self._resolve_embed_dir(text_model)
+        self.global_grounding_neg_embeddings = torch.load(embed_dir / "global_grounding_neg_embeddings.pt")
+        self.train_label_embeddings = torch.load(embed_dir / "train_label_embeddings.pt")
+
+    @staticmethod
+    def _resolve_embed_dir(text_model: str) -> "Path":
+        """嵌入文件目录：优先 config/{text_model}/，回退 tools/{text_model}/。"""
+        from pathlib import Path
+
+        for candidate in (Path("config") / text_model, Path("tools") / text_model):
+            if (candidate / "train_label_embeddings.pt").is_file():
+                return candidate
+        raise FileNotFoundError(
+            f"未找到 train_label_embeddings.pt。请先运行 bash 1-data-process/3-create_vocab_pt.sh，"
+            f"或检查 config/{text_model}/ 与 tools/{text_model}/。"
+        )
+
+    @staticmethod
+    def _resolve_neg_vocab_path() -> "Path":
+        """负词汇表：优先 YOLOE_NEG_VOCAB 环境变量，否则回退 config/vocab/。"""
+        from pathlib import Path
+        import os
+
+        if env := os.environ.get("YOLOE_NEG_VOCAB"):
+            p = Path(env)
+            if p.is_file():
+                return p
+        for candidate in (
+            Path("config/vocab/global_grounding_neg_cat.json"),
+            Path("tools/global_grounding_neg_cat.json"),
+        ):
+            if candidate.is_file():
+                return candidate
+        raise FileNotFoundError(
+            "未找到负词汇表 JSON。请先运行 bash 1-data-process/3-create_vocab_pt.sh，"
+            "或将路径导出为 YOLOE_NEG_VOCAB。"
+        )
     def __call__(self, labels: dict) -> dict:
         """
         Randomly samples positive and negative texts and updates class indices accordingly.
