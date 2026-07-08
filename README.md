@@ -1,6 +1,7 @@
 # 👁️ YOLOE 训练/推理代码
 
 YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支持文本 / 视觉 / Prompt-Free 三种推理。ICCV 2025。
+
   - 调研笔记参考: https://www.wolai.com/6BYdTivH3Pe7YG6CdDehom
 
 
