@@ -26,9 +26,13 @@ config="config/default_notrain.yaml"       # 推理配置 yaml
 
 
 #---------------#
-# 切换到虚拟环境
+# 切换到虚拟环境（conda 路径因机器而异，clone 后请修改 CONDA_BASE）
+#   常见：$HOME/miniconda3 | $HOME/anaconda3 | /opt/conda
+#   查找：dirname "$(dirname "$(which conda)")"
+#   环境名 yoloe 须与 README §0 中 conda create -n 一致
 #---------------#
-source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
+CONDA_BASE="${CONDA_BASE:-$HOME/miniconda3}"   # 本机示例：/home/ubuntu/miniconda3
+source "$CONDA_BASE/etc/profile.d/conda.sh"
 conda activate yoloe
 
 
