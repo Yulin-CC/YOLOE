@@ -27,3 +27,8 @@ weights/
 # 环境 / 系统
 .env
 .DS_Store
+
+# 软连接
+/pyproject.toml
+/requirements.txt
+/LICENSE
