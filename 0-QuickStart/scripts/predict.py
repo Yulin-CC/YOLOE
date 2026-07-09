@@ -61,7 +61,7 @@ def predict_text(model, source, names, output, device, predict_cfg: dict):
     model.set_classes(names, model.get_text_pe(names))
 
     image = Image.open(source).convert("RGB")
-    kwargs = _build_predict_kwargs(predict_cfg, source=image, verbose=True)
+    kwargs = _build_predict_kwargs(predict_cfg, source=image, verbose=True, save=False)
     results = model.predict(**kwargs)
     _print_detections(results[0])
     _save_annotated(image, results[0], output, source)
@@ -217,6 +217,12 @@ if __name__ == "__main__":
     device = _pick(args.device, cfg, "device", "cuda:0")
 
     print(f"📄 配置：{args.config}")
+    weights_path = Path(weights)
+    if not weights_path.is_absolute():
+        weights_path = (ROOT / weights_path).resolve()
+    else:
+        weights_path = weights_path.resolve()
+    print(f"   weights={weights_path}")
     print(f"   mode={mode}  source={source}  device={device}")
 
     if mode == "text":
@@ -230,6 +236,12 @@ if __name__ == "__main__":
 
     elif mode == "promptfree":
         weights_pf = weights.replace(".pt", "-pf.pt")
-        if not Path(weights_pf).is_file():
-            raise FileNotFoundError(f"Prompt-Free 权重不存在: {weights_pf}")
-        predict_promptfree(weights, weights_pf, source, device, cfg)
+        weights_pf_path = Path(weights_pf)
+        if not weights_pf_path.is_absolute():
+            weights_pf_path = (ROOT / weights_pf_path).resolve()
+        else:
+            weights_pf_path = weights_pf_path.resolve()
+        print(f"   weights_pf={weights_pf_path}")
+        if not weights_pf_path.is_file():
+            raise FileNotFoundError(f"Prompt-Free 权重不存在: {weights_pf_path}")
+        predict_promptfree(weights, str(weights_pf_path), source, device, cfg)

@@ -18,11 +18,11 @@ project="YOLOE-2606-test"                  # 权重保存至 runs/0-train/$proje
 model="weights/yoloe-11s-seg.pt"           # .pt → 微调；.yaml → scratch
 mobileclip="./weights/mobileclip_blt.pt"   # MobileCLIP 文本编码器权重（text 模式必需）
 #------------------------------------------#
-dataset="data/yolo/0-Person.yaml"            # YOLO 格式数据集 yaml
+dataset="data/yolo/0-YOLO.yaml"            # YOLO 格式数据集 yaml
 #------------------------------------------#
-config="config/train_pe.yaml"      # 训练配置
+config="config/train_pe.yaml"              # 训练配置
 #------------------------------------------#
-background=1                       # 1=后台运行（nohup）；0=前台盯着看
+background=1                               # 1=后台运行（nohup）；0=前台盯着看
 #------------------------------------------#
 # epochs / batch / lr 等超参从 config/train_pe.yaml 中 train.defaults 读取，无需在此修改
 

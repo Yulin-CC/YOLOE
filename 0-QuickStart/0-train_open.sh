@@ -6,7 +6,7 @@
  # @Description: YOLOE 开集训练入口，由 train_open.py 统一完成：
  #   词汇表 .pt 请先运行 1-data-process/3-create_vocab_pt.sh 离线生成
  #   Step 1 开集训练（linear/full/visual/scratch，超参从 config/train_open.yaml 读取）
- #   Step 2 备份嵌入文件 + 词汇表到 runs/0-train/$project/config/
+ #   训练启动时自动备份配置至 runs/0-train/$project/config/{args,dataset,vocab}/
 ###
 WORK_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT="$(cd "$WORK_DIR/.." && pwd)"

@@ -130,21 +130,88 @@ def _prepare_pe(model, names: list[str], pe_path: str) -> str:
 
 #----------------------------#
 # 备份配置快照（训练启动后写入 save_dir，避免被 Ultralytics 清空）
+# 目录结构：runs/0-train/<project>/config/{args,dataset,vocab}/
 #----------------------------#
-def _backup_configs(run_dir: str | Path, data_yaml: str):
-    backup = Path(run_dir) / "config"
-    backup.mkdir(parents=True, exist_ok=True)
+def _resolve_config_path(path: str) -> Path:
+    p = Path(path)
+    return p.resolve() if p.is_absolute() else (ROOT / p).resolve()
 
-    for src in [ROOT / _DEFAULT_CFG, ROOT / data_yaml]:
+
+def _resolve_embed_dir(text_model: str) -> Path:
+    for candidate in (ROOT / "config" / text_model, ROOT / "tools" / text_model):
+        if (candidate / "train_label_embeddings.pt").is_file():
+            return candidate
+    return ROOT / "config" / text_model
+
+
+def backup_train_config(
+    run_dir: str | Path,
+    data_yaml: str,
+    *,
+    grounding_yaml: str | None = None,
+    val_yaml: str | None = None,
+    include_vocab: bool = False,
+):
+    config_root = Path(run_dir) / "config"
+    args_dir = config_root / "args"
+    dataset_dir = config_root / "dataset"
+    args_dir.mkdir(parents=True, exist_ok=True)
+    dataset_dir.mkdir(parents=True, exist_ok=True)
+
+    train_cfg = ROOT / _DEFAULT_CFG
+    if train_cfg.is_file():
+        shutil.copy2(train_cfg, args_dir / train_cfg.name)
+        print(f"  📋 {train_cfg.name} → {args_dir}/")
+
+    for yaml_path in (data_yaml, grounding_yaml, val_yaml):
+        if not yaml_path:
+            continue
+        src = _resolve_config_path(yaml_path)
         if src.is_file():
-            shutil.copy2(src, backup / src.name)
-            print(f"  📋 配置已备份：{backup / src.name}")
+            shutil.copy2(src, dataset_dir / src.name)
+            print(f"  📋 {src.name} → {dataset_dir}/")
+
+    if not include_vocab:
+        return
+
+    vocab_dir = config_root / "vocab"
+    vocab_dir.mkdir(parents=True, exist_ok=True)
+    cfg = _load_train_cfg()
+    vocab_json = cfg.get("vocab_json", "config/vocab/train_label_embeddings.json")
+    neg_vocab = cfg.get("neg_vocab", "config/vocab/global_grounding_neg_cat.json")
+    text_model = cfg.get("text_model", "mobileclip:blt")
+    embed_dir = _resolve_embed_dir(text_model)
+
+    for pt_name in ("global_grounding_neg_embeddings.pt", "train_label_embeddings.pt"):
+        src = embed_dir / pt_name
+        if src.is_file():
+            shutil.copy2(src, vocab_dir / pt_name)
+            print(f"  📦 {pt_name} → {vocab_dir}/")
+
+    for vocab_path in (vocab_json, neg_vocab):
+        vocab_src = _resolve_config_path(vocab_path)
+        if vocab_src.is_file():
+            shutil.copy2(vocab_src, vocab_dir / vocab_src.name)
+            print(f"  📋 {vocab_src.name} → {vocab_dir}/")
 
 
-def _register_config_backup(model, data_yaml: str):
+def _register_config_backup(
+    model,
+    data_yaml: str,
+    *,
+    grounding_yaml: str | None = None,
+    val_yaml: str | None = None,
+    include_vocab: bool = False,
+):
     def _on_train_start(trainer):
         if _is_main_process():
-            _backup_configs(trainer.save_dir, data_yaml)
+            backup_train_config(
+                trainer.save_dir,
+                data_yaml,
+                grounding_yaml=grounding_yaml,
+                val_yaml=val_yaml,
+                include_vocab=include_vocab,
+            )
 
     model.add_callback("on_train_start", _on_train_start)
 
@@ -351,7 +418,13 @@ def train_scratch(args):
     print(f"🔧 Config:  epochs={epochs} | {_ddp_batch_note(batch, device)} | lr0={lr0} | device={device}\n")
 
     model = YOLOE(args.model)
-    _register_config_backup(model, args.data)
+    _register_config_backup(
+        model,
+        args.data,
+        grounding_yaml=getattr(args, "grounding_data", None),
+        val_yaml=getattr(args, "val_data", None) or cfg.get("val_data"),
+        include_vocab=getattr(args, "backup_vocab", False),
+    )
 
     train_kwargs = _build_train_kwargs(
         cfg, extends,
