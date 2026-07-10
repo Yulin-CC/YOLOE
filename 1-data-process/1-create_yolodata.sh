@@ -17,11 +17,11 @@ split_ratio=0.9                   # 训练集比例
 # 切换到虚拟环境
 #---------------#
 source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
-conda activate yulin
+conda activate yoloe
 
 #---------------#
 # 标签转换：jsons-segment → labels/*.txt + train.txt / val.txt
 #---------------#
-python util/create_segment_yolo.py \
-    --path        "$Path"         \
+python util/create_segment_yolo.py  \
+    --path        "$Path"           \
     --split_ratio "$split_ratio"

@@ -25,7 +25,7 @@ force="--force"    # 强制重建 .pt （可注释掉）
 # 切换到虚拟环境
 #---------------#
 source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
-conda activate yulin
+conda activate yoloe
 
 # 脚本在 1-data-process/ 下执行，Python 工具以项目根目录解析相对路径
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

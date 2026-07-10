@@ -16,7 +16,7 @@ project="gqa"                      # 输出文件前缀（生成 {Path}/{project
 # 切换到虚拟环境
 #---------------#
 source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
-conda activate yulin
+conda activate yoloe
 
 #---------------#
 # Step 1：jsons/*.json → COCO segm json
