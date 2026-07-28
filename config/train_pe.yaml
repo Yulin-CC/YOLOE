@@ -34,7 +34,7 @@ train:
     cfg:      null                         # [基础] 覆盖 ultralytics/cfg/default.yaml 的外部配置路径
 
     # ── 训练循环 ──
-    epochs:       10          # [训练循环] 训练轮数（full 建议 80，visual 建议 2）
+    epochs:       80          # [训练循环] 训练轮数（full 建议 80，visual 建议 2）
     time:         null        # [训练循环] 按小时训练（设置后覆盖 epochs）
     batch:        16          # [训练循环] 全局 batch（DDP 按卡数均分）
     imgsz:        640         # [训练循环] 输入图像尺寸
@@ -45,7 +45,7 @@ train:
     cache:        false       # [训练循环] 数据缓存：false | true(ram) | disk
     resume:       false       # [训练循环] 从 last.pt 断点续训
     pretrained:   true        # [训练循环] 加载预训练权重（bool 或权重路径 str）
-    exist_ok:     false       # [训练循环] 是否覆盖已有实验目录
+    exist_ok:     true       # [训练循环] 是否覆盖已有实验目录
     close_mosaic: 5           # [训练循环] 最后 N epoch 关闭 Mosaic（full 建议 10）
     val_interval: 1           # [训练循环] 每 N epoch 验证一次
     fraction:     1.0         # [训练循环] 使用训练集的比例（0~1）

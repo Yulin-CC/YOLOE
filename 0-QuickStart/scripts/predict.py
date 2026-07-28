@@ -54,17 +54,39 @@ def _build_predict_kwargs(cfg: dict, **overrides) -> dict:
 
 
 #----------------------------#
+# 收集输入图片路径（单文件 / 目录）
+#----------------------------#
+_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}
+
+
+def _list_images(source: str) -> list[Path]:
+    src = Path(source)
+    if src.is_file():
+        return [src]
+    if src.is_dir():
+        images = sorted(p for p in src.iterdir() if p.suffix.lower() in _IMAGE_EXTS)
+        if not images:
+            raise FileNotFoundError(f"目录中未找到图片：{src}")
+        return images
+    raise FileNotFoundError(f"输入不存在：{src}")
+
+
+#----------------------------#
 # 文本提示词推理
 #----------------------------#
 def predict_text(model, source, names, output, device, predict_cfg: dict):
     model.to(device)
     model.set_classes(names, model.get_text_pe(names))
 
-    image = Image.open(source).convert("RGB")
-    kwargs = _build_predict_kwargs(predict_cfg, source=image, verbose=True, save=False)
-    results = model.predict(**kwargs)
-    _print_detections(results[0])
-    _save_annotated(image, results[0], output, source)
+    images = _list_images(source)
+    print(f"📷 待推理图片：{len(images)} 张")
+    for i, img_path in enumerate(images, 1):
+        print(f"\n[{i}/{len(images)}] {img_path.name}")
+        image = Image.open(img_path).convert("RGB")
+        kwargs = _build_predict_kwargs(predict_cfg, source=image, verbose=True, save=False)
+        results = model.predict(**kwargs)
+        _print_detections(results[0])
+        _save_annotated(image, results[0], output, str(img_path))
 
 
 #----------------------------#

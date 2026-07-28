@@ -10,6 +10,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 - [x] 2026-07-02 1. 新增 `1-data-process/` PE 与 Grounding 两套独立数据预处理脚本；2. 新增 `data/yolo/`、`data/grounding/` 训练 yaml 自动生成；3. 开集训练支持 yolo + grounding yaml 合并（scratch 模式）
 - [x] 2026-07-07 1. 调整项目结构，合并数据预处理脚本为 `data/create_data.py`; 2. 解耦项目的配置文件和数据读取文件
 - [x] 2026-07-09 修复环境安装文档，补全 `z-others/requirements.txt` / `pyproject.toml` 及根目录软链
+- [x] 2026-07-28 1. 新增 `convert_geoai2coco.py`（GEOAI / Grounding → COCO segm）；2. 推理支持目录批量；3. 完善 LabelMe 拆分（iscrowd / group_id）与 COCO 可视化标签解析；4. 删除旧 `convert_labelme_to_coco_bbox.py`
 ---
 
 ## README 目录

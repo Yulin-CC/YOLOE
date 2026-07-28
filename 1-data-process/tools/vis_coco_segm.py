@@ -100,9 +100,17 @@ def visualize(json_path: Path, img_path: Path, output_dir: Path, limit: int, max
         overlay = image.copy()
 
         ann_ids = coco.getAnnIds(imgIds=img_id)
+        caption = img_info.get("caption") or ""
         for ann in coco.loadAnns(ann_ids):
-            cat_name = cat_id_to_name.get(ann["category_id"], str(ann["category_id"]))
-            color = PALETTE[ann["category_id"] % len(PALETTE)]
+            cat_name = (ann.get("description_en") or ann.get("label") or "").strip()
+            if not cat_name and caption:
+                for start, end in ann.get("tokens_positive") or []:
+                    cat_name = caption[start:end].strip()
+                    if cat_name:
+                        break
+            if not cat_name:
+                cat_name = cat_id_to_name.get(ann["category_id"], str(ann["category_id"]))
+            color = PALETTE[ann["id"] % len(PALETTE)]
             draw_annotation(canvas, overlay, ann, cat_name, color, scale, alpha)
 
         result = cv2.addWeighted(overlay, alpha, canvas, 1 - alpha, 0)

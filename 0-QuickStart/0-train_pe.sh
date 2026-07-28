@@ -13,12 +13,12 @@ PROJECT_ROOT="$(cd "$WORK_DIR/.." && pwd)"
 #------------------------------------------#
 devices="0"                                # GPU 设备 ID，多卡如 "0,1,2,3"
 #------------------------------------------#
-project="YOLOE-2606-test"                  # 权重保存至 runs/0-train/$project/
+project="YOLOE-PE-2606-test"                  # 权重保存至 runs/0-train/$project/
 #------------------------------------------#
 model="weights/yoloe-11s-seg.pt"           # .pt → 微调；.yaml → scratch
 mobileclip="./weights/mobileclip_blt.pt"   # MobileCLIP 文本编码器权重（text 模式必需）
 #------------------------------------------#
-dataset="data/yolo/0-YOLO.yaml"            # YOLO 格式数据集 yaml
+dataset="data/coco.yaml"            # YOLO 格式数据集 yaml
 #------------------------------------------#
 config="config/train_pe.yaml"              # 训练配置
 #------------------------------------------#

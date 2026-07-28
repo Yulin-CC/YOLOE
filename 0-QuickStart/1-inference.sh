@@ -12,14 +12,14 @@ WORK_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 #------------------------------------------#
 devices=0                                  # GPU 设备 ID
 #------------------------------------------#
-dataset="ultralytics/assets/bus.jpg"           # 输入（单张图片 / 目录）
+dataset="sample/images"          # 输入（单张图片 / 目录）
 #------------------------------------------#
 mode="text"                                # 推理模式：text | visual | promptfree
 #------------------------------------------#
 weights="./weights/yoloe-11s-seg.pt"       # 预训练权重路径（text/visual 模式通用）
 mobileclip="./weights/mobileclip_blt.pt"   # MobileCLIP 文本编码器权重（text 模式必需）
 #------------------------------------------#
-names="person bus"                              # 检测类别（仅 text 模式需要，空格分隔）
+names="person"                              # 检测类别（仅 text 模式需要，空格分隔）
 #------------------------------------------#
 config="config/default_notrain.yaml"       # 推理配置 yaml
 #------------------------------------------#

@@ -47,23 +47,26 @@ def segmentation_to_polygons(segmentation) -> list[list[list[float]]]:
 
 
 def ann_to_shapes(ann: dict, cat_id_to_name: dict[int, str]) -> list[dict]:
-    if ann.get("iscrowd"):
-        return []
-
+    # 保留全部有效 polygon（含 iscrowd）；多段拆成多个同名 shape，同 ann 共用 group_id
     label = cat_id_to_name.get(ann["category_id"])
     if not label:
         return []
 
+    iscrowd = 1 if ann.get("iscrowd") else 0
+    polygons = segmentation_to_polygons(ann.get("segmentation"))
+    group_id = int(ann["id"]) if (iscrowd or len(polygons) > 1) and "id" in ann else None
+
     shapes = []
-    for points in segmentation_to_polygons(ann.get("segmentation")):
+    for points in polygons:
         shapes.append({
             "label": label,
             "points": points,
-            "group_id": None,
+            "group_id": group_id,
             "description": "",
             "shape_type": "polygon",
             "flags": {},
             "mask": None,
+            "iscrowd": iscrowd,
         })
     return shapes
 
@@ -101,6 +104,9 @@ def split_coco_segm_to_labelme(
     output_dir.mkdir(parents=True, exist_ok=True)
     written = 0
     skipped = 0
+    n_shapes = 0
+    n_iscrowd_shapes = 0
+    n_ann_no_poly = 0
 
     for img_id in tqdm(img_ids, desc="Splitting to LabelMe"):
         image = coco.loadImgs(img_id)[0]
@@ -113,19 +119,30 @@ def split_coco_segm_to_labelme(
         shapes: list[dict] = []
         seen: set[tuple] = set()
         for ann in coco.loadAnns(coco.getAnnIds(imgIds=img_id)):
-            for shape in ann_to_shapes(ann, cat_id_to_name):
+            converted = ann_to_shapes(ann, cat_id_to_name)
+            if not converted:
+                n_ann_no_poly += 1
+                continue
+            for shape in converted:
                 key = (shape["label"], tuple(tuple(p) for p in shape["points"]))
                 if key in seen:
                     continue
                 seen.add(key)
                 shapes.append(shape)
+                if shape.get("iscrowd"):
+                    n_iscrowd_shapes += 1
 
         labelme = build_labelme_json(image, shapes)
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(labelme, f, ensure_ascii=False, separators=(",", ":"))
 
         written += 1
+        n_shapes += len(shapes)
 
+    print(
+        f"   shapes={n_shapes} (含 iscrowd 转出 {n_iscrowd_shapes})，"
+        f"无可用 polygon 的 ann={n_ann_no_poly}"
+    )
     return written, skipped
 
 
