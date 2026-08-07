@@ -2,7 +2,8 @@
 # @Author: 算法组 蔡雨霖
 # @Date: 2026-07-07
 # @Description: 从 YOLO yaml + grounding cache 收集全部类别/短语，生成 train_label_embeddings.pt。
-# @Command: python 1-data-process/tools/vocab_generate_label_embedding.py --yolo-yaml data/yolo/0-Objects365v1.yaml --grounding-yaml data/grounding/0-mixed.yaml
+#   --yolo-yaml 支持索引（data/0-YOLO.yaml，展开 train 子数据集）或单份含 names 的数据集 yaml。
+# @Command: python 1-data-process/tools/vocab_generate_label_embedding.py --yolo-yaml data/0-YOLO.yaml --grounding-yaml data/0-Grounding.yaml --force
 """
 import argparse
 import json
@@ -39,13 +40,54 @@ def _get_text_model_name() -> str:
 
 
 #----------------------------#
+# 解析 0-YOLO.yaml 索引 / 单份数据集 yaml
+#----------------------------#
+def expand_yolo_train_yamls(yolo_yaml: str) -> list[Path]:
+    """展开 YOLO 入口：索引则返回 train 子 yaml 列表；普通数据集返回 [自身]。"""
+    from ultralytics.utils import yaml_load
+
+    index_path = _resolve_path(yolo_yaml)
+    if not index_path.is_file():
+        raise FileNotFoundError(f"YOLO 数据集 yaml 不存在: {index_path}")
+
+    cfg = yaml_load(str(index_path))
+    train = cfg.get("train")
+
+    def _as_yaml_list(value) -> list[str] | None:
+        if value is None:
+            return []
+        items = value if isinstance(value, list) else [value]
+        items = [str(x).strip() for x in items if x is not None and str(x).strip()]
+        if not items:
+            return []
+        if all(p.endswith((".yaml", ".yml")) for p in items):
+            return items
+        return None
+
+    train_refs = _as_yaml_list(train)
+    if train_refs is not None:
+        paths = [_resolve_path(p) for p in train_refs]
+        for p in paths:
+            if not p.is_file():
+                raise FileNotFoundError(f"索引中的数据集 yaml 不存在: {p}")
+        if not paths:
+            raise ValueError(f"YOLO 索引缺少 train 子数据集: {index_path}")
+        return paths
+
+    return [index_path]
+
+
+#----------------------------#
 # 从 YOLO yaml 收集检测类别
 #----------------------------#
 def collect_detection_labels(yaml_path: Path) -> set[str]:
     from ultralytics.utils import yaml_load
 
-    cat_names: set[str] = set()
     data = yaml_load(str(yaml_path), append_filename=True)
+    if "names" not in data:
+        raise ValueError(f"数据集 yaml 缺少 names（应是子数据集，不是索引）: {yaml_path}")
+
+    cat_names: set[str] = set()
     for name in data["names"].values():
         for n in str(name).split("/"):
             n = n.strip()
@@ -98,13 +140,15 @@ def grounding_caches_from_yaml(grounding_yaml: Path) -> list[Path]:
 # 合并全部标签来源
 #----------------------------#
 def collect_all_labels(yolo_yaml: str, grounding_yaml: str | None = None) -> tuple[list[str], list[Path]]:
-    yolo_path = _resolve_path(yolo_yaml)
-    if not yolo_path.is_file():
-        raise FileNotFoundError(f"YOLO 数据集 yaml 不存在: {yolo_path}")
+    index_path = _resolve_path(yolo_yaml)
+    train_yamls = expand_yolo_train_yamls(yolo_yaml)
 
-    sources: list[Path] = [yolo_path]
-    all_names = collect_detection_labels(yolo_path)
-    print(f"  Objects365 / YOLO: {len(all_names)} 类 ← {yolo_path}")
+    sources: list[Path] = [index_path, *train_yamls]
+    all_names: set[str] = set()
+    for yolo_path in train_yamls:
+        names = collect_detection_labels(yolo_path)
+        print(f"  YOLO: {len(names)} 类 ← {yolo_path.name}")
+        all_names |= names
 
     if grounding_yaml:
         grounding_path = _resolve_path(grounding_yaml)
@@ -197,7 +241,8 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="从 YOLO yaml + grounding cache 生成 train_label_embeddings.pt"
     )
-    parser.add_argument("--yolo-yaml", type=str, required=True, help="YOLO 数据集 yaml")
+    parser.add_argument("--yolo-yaml", type=str, required=True,
+                        help="YOLO 索引 yaml（data/0-YOLO.yaml）或单份含 names 的数据集 yaml")
     parser.add_argument("--grounding-yaml", type=str, default=None, help="Grounding 数据集 yaml（scratch 必需）")
     parser.add_argument("--vocab-json", type=str, default="config/vocab/train_label_embeddings.json", help="可选：同步写出词汇表 JSON 备份")
     parser.add_argument("--output-dir", type=str, default=None, help="输出目录（默认 config/{text_model}/）")

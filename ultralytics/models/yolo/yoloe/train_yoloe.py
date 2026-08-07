@@ -3,6 +3,7 @@
 from ultralytics.data import YOLOConcatDataset, build_grounding, build_yolo_dataset
 from ultralytics.data.utils import check_det_dataset
 from ultralytics.models.yolo.yoloe import YOLOETrainer
+from ultralytics.models.yolo.yoloe.config_backup import register_trainer_config_backup
 from ultralytics.utils import DEFAULT_CFG
 from ultralytics.utils.torch_utils import de_parallel
 
@@ -13,6 +14,8 @@ class YOLOETrainerFromScratch(YOLOETrainer):
         if overrides is None:
             overrides = {}
         super().__init__(cfg, overrides, _callbacks)
+        # DDP child re-creates Trainer without model.add_callback; hook here instead
+        register_trainer_config_backup(self)
 
     def build_dataset(self, img_path, mode="train", batch=None):
         """
@@ -63,7 +66,12 @@ class YOLOETrainerFromScratch(YOLOETrainer):
             final_data[s] += grounding_data
         # NOTE: to make training work properly, set `nc` and `names`
         final_data["nc"] = data["val"][0]["nc"]
-        final_data["names"] = data["val"][0]["names"]
+        # FIX: 不要固化验证集（LVIS）的具体词表到模型。
+        #   多数据集混合训练时各数据集 names 不互通，且 YOLOE 为开集 grounding 训练，
+        #   不依赖固定 names；若用验证集 names（如 LVIS 1203 类），会固化进权重。
+        #   此处改用与官方一致的 80 个占位符 names；验证时仍用 val yaml 真实 names
+        #   （见 yoloe/val.py），验证后会恢复占位符再 save，避免 checkpoint 被污染。
+        final_data["names"] = {i: str(i) for i in range(80)}
         # NOTE: add path with lvis path
         final_data["path"] = data["val"][0]["path"]
         self.data = final_data

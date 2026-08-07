@@ -291,7 +291,8 @@ class YOLOMultiModalDataset(YOLODataset):
         if self.augment and not self.single_cls:
             # NOTE: hard-coded the args for now.
             index = -2 if self.load_vp else -1
-            transforms.insert(index, RandomLoadText(text_model=hyp.text_model, max_samples=min(self.data["nc"], 80), padding=True))
+            # 固定 80 槽：多数据集 Concat 时 txt_feats 形状须一致（nc<80 时由 grounding 负样本 pad）
+            transforms.insert(index, RandomLoadText(text_model=hyp.text_model, max_samples=80, padding=True))
         return transforms
 
 from ultralytics.utils.ops import xyxy2xywhn
