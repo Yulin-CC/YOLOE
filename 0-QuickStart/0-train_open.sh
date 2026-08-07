@@ -16,12 +16,13 @@ PROJECT_ROOT="$(cd "$WORK_DIR/.." && pwd)"
 #------------------------------------------#
 devices="0,1"                              # GPU ID；多卡 DDP 如 "0,1,2,3"（batch 为全局 batch，自动按卡数均分）
 #------------------------------------------#
-project="YOLOE-Scratch-260708-test"          # 权重保存至 runs/0-train/$project/
+project="YOLOE-Scratch-260708-v0.1.0-Probe"          # 权重保存至 runs/0-train/$project/
 #--------------------------------------------------------------------#
-model="ultralytics/cfg/models/11/yoloe-11-seg.yaml"                  # .pt → 微调；.yaml → scratch
+# model="ultralytics/cfg/models/11/yoloe-11-seg.yaml"                  # .pt → 微调；.yaml → scratch
+model="weights/yoloe-11s-seg.pt"
 mobileclip="./weights/mobileclip_blt.pt"                             # MobileCLIP 文本编码器权重（必需）
 #--------------------------------------------------------------------#
-yolo_dataset="data/0-YOLO.yaml"                         # YOLO 格式数据集 yaml
+yolo_dataset="data/0-YOLO.yaml"                         # YOLO 索引 yaml（train/val 指向子数据集）
 grounding_dataset="data/0-Grounding.yaml"               # Grounding 数据集 yaml（scratch 模式使用）
 #-------------------------------------------------------#
 config="config/train_open.yaml"                         # 训练配置（开集专用）

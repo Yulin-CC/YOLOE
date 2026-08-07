@@ -24,7 +24,7 @@ from ultralytics.utils import yaml_load
 _DEFAULT_CFG = Path("config/default_notrain.yaml")
 
 # predict yaml 专用字段，不传给 model.predict()
-_PREDICT_CFG_SKIP = frozenset({"weights", "mode", "names", "output"})
+_PREDICT_CFG_SKIP = frozenset({"weights", "mode", "names", "output", "show_mask"})
 
 
 #----------------------------#
@@ -86,7 +86,7 @@ def predict_text(model, source, names, output, device, predict_cfg: dict):
         kwargs = _build_predict_kwargs(predict_cfg, source=image, verbose=True, save=False)
         results = model.predict(**kwargs)
         _print_detections(results[0])
-        _save_annotated(image, results[0], output, str(img_path))
+        _save_annotated(image, results[0], output, str(img_path), predict_cfg)
 
 
 #----------------------------#
@@ -179,22 +179,32 @@ def _print_detections(result):
 #----------------------------#
 # 可视化并保存结果
 #----------------------------#
-def _save_annotated(image, result, output, source):
+def _save_annotated(image, result, output, source, predict_cfg: dict | None = None):
+    cfg = predict_cfg or {}
+    show_mask   = cfg.get("show_mask", True)
+    show_boxes  = cfg.get("show_boxes", True)
+    show_labels = cfg.get("show_labels", True)
+    show_conf   = cfg.get("show_conf", True)
+    line_width  = cfg.get("line_width")
+
     detections = sv.Detections.from_ultralytics(result)
 
     resolution_wh = image.size
-    thickness  = sv.calculate_optimal_line_thickness(resolution_wh=resolution_wh)
+    thickness  = line_width or sv.calculate_optimal_line_thickness(resolution_wh=resolution_wh)
     text_scale = sv.calculate_optimal_text_scale(resolution_wh=resolution_wh)
 
-    labels = [
-        f"{cls} {conf:.2f}"
-        for cls, conf in zip(detections["class_name"], detections.confidence)
-    ]
+    labels = []
+    if show_labels:
+        for cls, conf in zip(detections["class_name"], detections.confidence):
+            labels.append(f"{cls} {conf:.2f}" if show_conf else str(cls))
 
     annotated = image.copy()
-    annotated = sv.MaskAnnotator(color_lookup=sv.ColorLookup.INDEX, opacity=0.4).annotate(annotated, detections)
-    annotated = sv.BoxAnnotator(color_lookup=sv.ColorLookup.INDEX, thickness=thickness).annotate(annotated, detections)
-    annotated = sv.LabelAnnotator(color_lookup=sv.ColorLookup.INDEX, text_scale=text_scale, smart_position=True).annotate(annotated, detections, labels)
+    if show_mask:
+        annotated = sv.MaskAnnotator(color_lookup=sv.ColorLookup.INDEX, opacity=0.4).annotate(annotated, detections)
+    if show_boxes:
+        annotated = sv.BoxAnnotator(color_lookup=sv.ColorLookup.INDEX, thickness=thickness).annotate(annotated, detections)
+    if labels:
+        annotated = sv.LabelAnnotator(color_lookup=sv.ColorLookup.INDEX, text_scale=text_scale, smart_position=True).annotate(annotated, detections, labels)
 
     out_path = Path(output) / Path(source).name
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -218,13 +228,23 @@ def parse_args():
                         help="预训练权重路径")
     parser.add_argument("--source",  type=str, default=None,
                         help="输入图片或目录")
-    parser.add_argument("--names",   nargs="+", default=None,
-                        help="检测类别（text 模式）")
+    parser.add_argument("--names",   type=str, default=None,
+                        help="检测类别（text 模式），逗号分隔，类名内可含空格，如 'black car,person'")
     parser.add_argument("--output",  type=str, default=None,
                         help="结果保存目录（text 模式）")
     parser.add_argument("--device",  type=str, default=None,
                         help="推理设备，如 cpu / cuda:0")
     return parser.parse_args()
+
+
+def _parse_names(names_arg, cfg) -> list:
+    """解析类别名：CLI 逗号分隔字符串，或 yaml list/逗号字符串。"""
+    if names_arg is not None:
+        return [x.strip() for x in str(names_arg).split(",") if x.strip()]
+    cfg_names = cfg.get("names", ["person"])
+    if isinstance(cfg_names, str):
+        return [x.strip() for x in cfg_names.split(",") if x.strip()]
+    return list(cfg_names)
 
 
 if __name__ == "__main__":
@@ -234,7 +254,7 @@ if __name__ == "__main__":
     mode = _pick(args.mode, cfg, "mode", "text")
     weights = _pick(args.weights, cfg, "weights", "weights/yoloe-11s-seg.pt")
     source = _pick(args.source, cfg, "source", "ultralytics/assets/bus.jpg")
-    names = args.names if args.names is not None else cfg.get("names", ["person"])
+    names = _parse_names(args.names, cfg)
     output = _pick(args.output, cfg, "output", "runs/1-predict")
     device = _pick(args.device, cfg, "device", "cuda:0")
 

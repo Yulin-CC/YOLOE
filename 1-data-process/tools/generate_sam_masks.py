@@ -29,8 +29,13 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--img-path", type=str, required=True, help="Path to the image folder")
     parser.add_argument("--json-path", type=str, required=True, help="Path to the annotation file")
-    parser.add_argument("--gpus", type=str, default="0,1,2,3,4,5,6,7", help="Devices")
-    parser.add_argument("--batch", action="store_true", default=False)
+    parser.add_argument(
+        "--gpus",
+        type=str,
+        default="0,1,2,3",
+        help="物理 GPU 编号，逗号分隔（如 0,2）；分片 rank 按列表顺序 0..n-1",
+    )
+    parser.add_argument("--batch", action="store_true", default=False, help="密框图按 chunk 推理，防 OOM")
     return parser.parse_args()
 
 
@@ -165,16 +170,28 @@ def worker(args):
     generate_mask_annos(predictor, rank, total, image_path, annotation_path, batch)
 
 def main(args):
-    # model config
-    devices = [f"{idx}" for idx in args.gpus.split(",")]
-    ranks = [int(idx) for idx in args.gpus.split(",")]
+    # devices=物理 GPU；ranks=分片序号 0..n-1（勿把 GPU 号当 rank，否则 --gpus 0,2 会越界）
+    devices = [d.strip() for d in args.gpus.split(",") if d.strip()]
+    ranks = list(range(len(devices)))
     total = len(ranks)
-    
+    print(f"SAM2 checkpoint: {SAM2_CHECKPOINT} exists={SAM2_CHECKPOINT.is_file()}")
+    print(f"devices={devices} ranks={ranks}")
+
     image_path = Path(args.img_path)
     annotation_path = Path(args.json_path)
-    
+
     with Pool(len(devices)) as pool:
-        _ = pool.map(worker, zip(devices, ranks, [total] * total, [image_path] * total, [annotation_path] * total, [args.batch] * total))
+        _ = pool.map(
+            worker,
+            zip(
+                devices,
+                ranks,
+                [total] * total,
+                [image_path] * total,
+                [annotation_path] * total,
+                [args.batch] * total,
+            ),
+        )
 
     annotations = []
     for rank in ranks:

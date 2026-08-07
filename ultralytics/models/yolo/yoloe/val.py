@@ -70,6 +70,50 @@ class YOLOEValidatorMixin:
             else:
                 prefix_stats[k] = v
         return prefix_stats
+
+    def _resolve_val_prompt_names(self, trainer=None):
+        """Resolve text-prompt names for validation.
+
+        Training may keep placeholder names on `trainer.model` / dataset for open-vocab
+        checkpoints. Validation still needs the real val-yaml names (e.g. LVIS 1203).
+        """
+        val_yaml = None
+        if trainer is not None:
+            data_cfg = getattr(trainer.args, "data", None)
+            if isinstance(data_cfg, dict):
+                val_cfg = data_cfg.get("val") or {}
+                if isinstance(val_cfg, dict):
+                    yolo_data = val_cfg.get("yolo_data") or []
+                    if yolo_data:
+                        val_yaml = yolo_data[0]
+            if val_yaml is None:
+                # final_eval may point validator.args.data at the val yaml path
+                data_arg = getattr(self.args, "data", None)
+                if isinstance(data_arg, str):
+                    val_yaml = data_arg
+        if isinstance(val_yaml, str):
+            data = check_det_dataset(val_yaml)
+            return [name.split("/")[0] for name in list(data["names"].values())]
+        return [name.split("/")[0] for name in list(self.dataloader.dataset.data["names"].values())]
+
+    @staticmethod
+    def _save_class_state(model):
+        return {
+            "names": deepcopy(model.names),
+            "nc": model.model[-1].nc,
+            "pe": getattr(model, "pe", None),
+            "has_pe": hasattr(model, "pe"),
+        }
+
+    @staticmethod
+    def _restore_class_state(model, state):
+        """Undo set_classes so EMA/checkpoint does not keep val prompt names."""
+        model.names = state["names"]
+        model.model[-1].nc = state["nc"]
+        if state["has_pe"]:
+            model.pe = state["pe"]
+        elif hasattr(model, "pe"):
+            delattr(model, "pe")
     
     @smart_inference_mode()
     def __call__(self, trainer=None, model=None):
@@ -80,24 +124,28 @@ class YOLOEValidatorMixin:
             assert(isinstance(model, YOLOEModel))
             assert(not model.training)
             
-            names = [name.split("/")[0] for name in list(self.dataloader.dataset.data["names"].values())]
-            
-            if not self.args.load_vp:
-                LOGGER.info("Validate using the text prompt.")
-                LOGGER.info(f"Encoding {len(names)} text prompts...")
-                tpe = model.get_text_pe(names)
-                model.set_classes(names, tpe)
-                tp_stats = super().__call__(trainer, model)
-                tp_stats = self.add_prefix_for_metric(tp_stats, "tp")
-                stats = tp_stats
-            else:
-                LOGGER.info("Validate using the visual prompt.")
-                self.args.half = False
-                vpe = self.get_visual_pe(model)
-                model.set_classes(names, vpe)
-                vp_stats = super().__call__(trainer, model)
-                vp_stats = self.add_prefix_for_metric(vp_stats, "vp")
-                stats = vp_stats
+            names = self._resolve_val_prompt_names(trainer)
+            class_state = self._save_class_state(model)
+            try:
+                if not self.args.load_vp:
+                    LOGGER.info("Validate using the text prompt.")
+                    LOGGER.info(f"Encoding {len(names)} text prompts...")
+                    tpe = model.get_text_pe(names)
+                    model.set_classes(names, tpe)
+                    tp_stats = super().__call__(trainer, model)
+                    tp_stats = self.add_prefix_for_metric(tp_stats, "tp")
+                    stats = tp_stats
+                else:
+                    LOGGER.info("Validate using the visual prompt.")
+                    self.args.half = False
+                    vpe = self.get_visual_pe(model)
+                    model.set_classes(names, vpe)
+                    vp_stats = super().__call__(trainer, model)
+                    vp_stats = self.add_prefix_for_metric(vp_stats, "vp")
+                    stats = vp_stats
+            finally:
+                # save_model() persists EMA; restore placeholders so LVIS names are not baked in
+                self._restore_class_state(model, class_state)
             
             return stats
         else:

@@ -152,47 +152,50 @@ def backup_train_config(
     val_yaml: str | None = None,
     include_vocab: bool = False,
 ):
-    config_root = Path(run_dir) / "config"
-    args_dir = config_root / "args"
-    dataset_dir = config_root / "dataset"
-    args_dir.mkdir(parents=True, exist_ok=True)
-    dataset_dir.mkdir(parents=True, exist_ok=True)
+    """Build copy plan + apply immediately (single-GPU) / stash for DDP child."""
+    from ultralytics.models.yolo.yoloe.config_backup import apply_config_backup, set_config_backup_plan
+
+    items: list[dict] = []
 
     train_cfg = ROOT / _DEFAULT_CFG
     if train_cfg.is_file():
-        shutil.copy2(train_cfg, args_dir / train_cfg.name)
-        print(f"  📋 {train_cfg.name} → {args_dir}/")
+        items.append({"src": str(train_cfg.resolve()), "rel": f"args/{train_cfg.name}"})
 
-    for yaml_path in (data_yaml, grounding_yaml, val_yaml):
-        if not yaml_path:
+    yaml_items: list[str] = []
+    for item in (data_yaml, grounding_yaml, val_yaml):
+        if not item:
             continue
+        if isinstance(item, (list, tuple)):
+            yaml_items.extend(str(x) for x in item if x)
+        else:
+            yaml_items.extend(p.strip() for p in str(item).split(",") if p.strip())
+
+    for yaml_path in yaml_items:
         src = _resolve_config_path(yaml_path)
         if src.is_file():
-            shutil.copy2(src, dataset_dir / src.name)
-            print(f"  📋 {src.name} → {dataset_dir}/")
+            items.append({"src": str(src), "rel": f"dataset/{src.name}"})
 
-    if not include_vocab:
-        return
+    if include_vocab:
+        cfg = _load_train_cfg()
+        vocab_json = cfg.get("vocab_json", "config/vocab/train_label_embeddings.json")
+        neg_vocab = cfg.get("neg_vocab", "config/vocab/global_grounding_neg_cat.json")
+        text_model = cfg.get("text_model", "mobileclip:blt")
+        embed_dir = _resolve_embed_dir(text_model)
 
-    vocab_dir = config_root / "vocab"
-    vocab_dir.mkdir(parents=True, exist_ok=True)
-    cfg = _load_train_cfg()
-    vocab_json = cfg.get("vocab_json", "config/vocab/train_label_embeddings.json")
-    neg_vocab = cfg.get("neg_vocab", "config/vocab/global_grounding_neg_cat.json")
-    text_model = cfg.get("text_model", "mobileclip:blt")
-    embed_dir = _resolve_embed_dir(text_model)
+        for pt_name in ("global_grounding_neg_embeddings.pt", "train_label_embeddings.pt"):
+            src = embed_dir / pt_name
+            if src.is_file():
+                items.append({"src": str(src.resolve()), "rel": f"vocab/{pt_name}"})
 
-    for pt_name in ("global_grounding_neg_embeddings.pt", "train_label_embeddings.pt"):
-        src = embed_dir / pt_name
-        if src.is_file():
-            shutil.copy2(src, vocab_dir / pt_name)
-            print(f"  📦 {pt_name} → {vocab_dir}/")
+        for vocab_path in (vocab_json, neg_vocab):
+            vocab_src = _resolve_config_path(vocab_path)
+            if vocab_src.is_file():
+                items.append({"src": str(vocab_src), "rel": f"vocab/{vocab_src.name}"})
 
-    for vocab_path in (vocab_json, neg_vocab):
-        vocab_src = _resolve_config_path(vocab_path)
-        if vocab_src.is_file():
-            shutil.copy2(vocab_src, vocab_dir / vocab_src.name)
-            print(f"  📋 {vocab_src.name} → {vocab_dir}/")
+    set_config_backup_plan(items)
+    # Optional eager write (single-GPU). DDP child re-applies on_train_start after save_dir recreate.
+    if run_dir:
+        apply_config_backup(run_dir)
 
 
 def _register_config_backup(
@@ -203,15 +206,20 @@ def _register_config_backup(
     val_yaml: str | None = None,
     include_vocab: bool = False,
 ):
+    # Only stash the plan here. Actual copy runs in Trainer.on_train_start
+    # (DDP child does not keep model.add_callback from the parent process).
+    backup_train_config(
+        run_dir="",  # defer write to trainer callback / apply when save_dir ready
+        data_yaml=data_yaml,
+        grounding_yaml=grounding_yaml,
+        val_yaml=val_yaml,
+        include_vocab=include_vocab,
+    )
+
     def _on_train_start(trainer):
         if _is_main_process():
-            backup_train_config(
-                trainer.save_dir,
-                data_yaml,
-                grounding_yaml=grounding_yaml,
-                val_yaml=val_yaml,
-                include_vocab=include_vocab,
-            )
+            from ultralytics.models.yolo.yoloe.config_backup import apply_config_backup
+            apply_config_backup(trainer.save_dir)
 
     model.add_callback("on_train_start", _on_train_start)
 
@@ -420,7 +428,7 @@ def train_scratch(args):
     model = YOLOE(args.model)
     _register_config_backup(
         model,
-        args.data,
+        getattr(args, "backup_dataset_yamls", None) or args.data,
         grounding_yaml=getattr(args, "grounding_data", None),
         val_yaml=getattr(args, "val_data", None) or cfg.get("val_data"),
         include_vocab=getattr(args, "backup_vocab", False),

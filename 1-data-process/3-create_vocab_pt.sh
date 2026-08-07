@@ -10,7 +10,7 @@
 #---------------#
 # 需要修改的值
 #---------------#
-yolo_dataset="data/yolo/0-YOLO.yaml"                       # YOLO 数据集 yaml
+yolo_dataset="data/0-YOLO.yaml"                            # YOLO 索引 yaml（展开 train 子数据集 names）
 grounding_dataset="data/0-Grounding.yaml"                  # Grounding 数据集 yaml（需已生成 .cache）
 #----------------------------------------------------------#
 neg_vocab="config/vocab/global_grounding_neg_cat.json"
@@ -19,6 +19,8 @@ vocab_json="config/vocab/train_label_embeddings.json"      # 可选：输出，�
 #----------------------------------------------------------#
 min_freq=100       # 负样本短语最小出现次数
 force="--force"    # 强制重建 .pt （可注释掉）
+#----------------------------------------------------------#
+mobileclip="./weights/mobileclip_blt.pt"                   # MobileCLIP 权重（编码类别文本必需）
 #------------------#
 
 #---------------#
@@ -30,6 +32,8 @@ conda activate yoloe
 # 脚本在 1-data-process/ 下执行，Python 工具以项目根目录解析相对路径
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
+
+export MOBILECLIP_PATH="$REPO_ROOT/${mobileclip#./}"
 
 #---------------#
 # Step 1：负样本词表 + 嵌入

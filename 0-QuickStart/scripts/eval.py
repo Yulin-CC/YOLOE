@@ -1,8 +1,11 @@
 """
 # @Author: 算法组 蔡雨霖
 # @Date: 2026-06-15
-# @Description: YOLOE 评估脚本，对齐官方 z-others/val*.py；LVIS text 模式支持自动 Fixed AP
-# @Command: python 0-QuickStart/scripts/eval.py --config config/default_notrain.yaml
+# @Description: YOLOE 评估脚本，对齐官方 z-others/val*.py
+#   --mode lvis：LVIS 完整开集评估（1203 类 + Fixed AP）
+#   --mode coco：COCO 下游评估（pycocotools）
+#   --mode geoai：自定义无人机场景开集验证（标准 mAP，Box + Mask）
+# @Command: python 0-QuickStart/scripts/eval.py --config config/default_notrain.yaml --mode lvis
 """
 import argparse
 import io
@@ -59,7 +62,7 @@ def load_eval_cfg(config_path: str) -> dict:
 
 # eval yaml 专用字段，不传给 model.val()
 _EVAL_CFG_SKIP = frozenset({
-    "weights", "mobileclip", "mode", "fixed_ap",
+    "weights", "mobileclip", "mode", "prompt", "fixed_ap", "datasets",
 })
 
 
@@ -284,8 +287,18 @@ _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 _TQDM_RE = re.compile(r"Validating YOLOE.*(%|\d+/\d+)")
 _METRICS_HDR_RE = re.compile(r"^\s*Class\s+Images\s+Instances")
 _ALL_ROW_RE = re.compile(r"^\s*all\s+\d")
+# 各类别指标行：`类别名  Images  Instances  P  R  mAP50  mAP50-95...`（排除 all/Class 表头）
+_CLASS_ROW_RE = re.compile(r"^\s*(?!all\b)(?!Class\b)\S+\s+\d+\s+\d+\s+[\d.]+")
 _AP_AR_RE = re.compile(r"^(Average Precision|Average Recall)")
 _MAXDETS_RE = re.compile(r"maxDets=\s*(-?\d+)")
+
+# Ultralytics 表头来自 tqdm desc（不走日志流），这里按任务补全：
+#   detect = 6 列（Box）；segment = 10 列（Box + Mask），与 _ALL_ROW_RE 的数字列数对应
+_METRICS_HDR_DETECT = ("%22s" + "%11s" * 6) % ("Class", "Images", "Instances", "Box(P", "R", "mAP50", "mAP50-95)")
+_METRICS_HDR_SEG = ("%22s" + "%11s" * 10) % (
+    "Class", "Images", "Instances", "Box(P", "R", "mAP50", "mAP50-95)",
+    "Mask(P", "R", "mAP50", "mAP50-95)",
+)
 
 
 def _coco_ap_triplet(metric_lines: list[str]) -> list[float]:
@@ -324,6 +337,7 @@ def _extract_eval_summary(text: str) -> str:
     speed = None
     std_metrics, fixed_metrics, copypaste = [], [], []
     ultralytics_rows, box_coco, mask_coco = [], [], []
+    per_class_rows = []
     in_box, in_mask = False, False
 
     for raw in text.splitlines():
@@ -342,8 +356,18 @@ def _extract_eval_summary(text: str) -> str:
             in_box, in_mask = True, False
         elif "MASK EVAL" in line:
             in_box, in_mask = False, True
-        elif _METRICS_HDR_RE.match(line) or _ALL_ROW_RE.match(line):
+        elif _METRICS_HDR_RE.match(line):
             ultralytics_rows.append(line)
+        elif _ALL_ROW_RE.match(line):
+            # Ultralytics 表头来自 tqdm desc，不走日志流；按 all 行列数自动补表头
+            n_fields = len(line.split())
+            header = _METRICS_HDR_SEG if n_fields > 8 else _METRICS_HDR_DETECT
+            if not any(_METRICS_HDR_RE.match(r) for r in ultralytics_rows):
+                ultralytics_rows.append(header)
+            ultralytics_rows.append(line)
+        elif _CLASS_ROW_RE.match(line):
+            # 各类别指标行（person/car/...），输出时排在 all 行之后
+            per_class_rows.append(line)
         elif _AP_AR_RE.match(line):
             m = _MAXDETS_RE.search(line)
             if in_box:
@@ -364,7 +388,8 @@ def _extract_eval_summary(text: str) -> str:
 
     if ultralytics_rows:
         parts.extend(["=" * 50, "Ultralytics 内置指标（COCO val2017）", "=" * 50])
-        parts.extend(ultralytics_rows)
+        parts.extend(ultralytics_rows)      # 表头 + all 行（all 在最上）
+        parts.extend(per_class_rows)        # 各类别行
         parts.append("")
 
     if box_coco:
@@ -458,10 +483,12 @@ def _log_coco_copypaste(stats):
     )
 
 
-def make_save_dir(mode: str) -> Path:
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    sub = "coco" if mode == "coco" else "lvis"
-    return ROOT / "runs/val" / sub / f"{mode}_{ts}"
+def make_save_dir(mode: str, weights: str, data: str) -> Path:
+    """按「模型名_数据集名」命名保存目录，保证唯一且直观。"""
+    model_name = Path(weights).stem          # yoloe-11s-seg.pt -> yoloe-11s-seg
+    dataset_name = Path(data).stem           # Public-lvis.yaml -> Public-lvis
+    sub = mode if mode in {"coco", "geoai"} else "lvis"
+    return ROOT / "runs/val" / sub / f"{model_name}_{dataset_name}"
 
 
 #----------------------------#
@@ -621,6 +648,69 @@ def eval_coco(weights, cfg, batch, device, save_dir):
 
 
 #----------------------------#
+# geoai：自定义无人机场景开集验证
+#----------------------------#
+def _load_data_names(data_yaml: str) -> list | None:
+    """从数据集 yaml 解析 names（dict 或 list），转为有序类别名列表。"""
+    try:
+        cfg = yaml_load(data_yaml)
+    except Exception as e:
+        print(f"⚠️  读取 {data_yaml} 失败: {e}")
+        return None
+    names = cfg.get("names")
+    if isinstance(names, dict):
+        # 按 id 排序，保证类别顺序与 labels 的 class_id 一致
+        return [names[k] for k in sorted(names, key=lambda x: int(x))]
+    if isinstance(names, list):
+        return list(names)
+    return None
+
+
+def _model_set_classes(model, names: list):
+    """用类别名列表设置模型的文本词表，覆盖权重固化的默认词表。"""
+    try:
+        pe = model.get_text_pe(names)
+        model.set_classes(names, pe)
+        print(f"✅ 已设置文本词表：{names}")
+    except Exception as e:
+        print(f"⚠️  set_classes 失败，使用权重默认词表: {e}")
+
+
+def eval_geoai(weights, cfg, split, batch, device, save_dir):
+    """
+    自定义无人机场景开集验证。
+
+    与 lvis/coco 的区别：使用用户自己的数据集 yaml（如 GEOAI-Smartsecurity.yaml），
+    显式用 yaml 的 names 设置文本词表，输出标准 Box mAP + Mask mAP，无需 LVIS/COCO json。
+
+    注意：必须显式 set_classes，否则 validator 会使用权重里固化的 names
+    （如自训模型可能固化了 LVIS 1203 类），导致类别词表错误。
+    """
+    data_yaml = resolve_path(cfg.get("data", "data/val-yolo_dataset/GEOAI-Smartsecurity.yaml"))
+    model = YOLOE(resolve_path(weights))
+
+    # 用数据集 yaml 的 names 作为文本词表，覆盖权重固化的默认词表
+    names = _load_data_names(data_yaml)
+    if names:
+        _model_set_classes(model, names)
+    else:
+        print(f"⚠️  无法从 {data_yaml} 解析 names，使用权重默认词表")
+
+    val_kwargs = _build_val_kwargs(
+        cfg,
+        data=data_yaml,
+        batch=batch,
+        split=split,
+        rect=False,
+        device=device,
+    )
+    with eval_log_session(save_dir):
+        _run_val(model, save_dir, **val_kwargs)
+    print(f"✅ GEOAI 开集验证完成（{split}）→ {save_dir}")
+    print(f"   数据集: {data_yaml}")
+
+
+#----------------------------#
 # 参数解析
 #----------------------------#
 def parse_args():
@@ -628,7 +718,8 @@ def parse_args():
         description="YOLOE 评估（CLI > config yaml eval 段 > 默认值）",
     )
     parser.add_argument("--config", type=str, default="config/default_notrain.yaml")
-    parser.add_argument("--mode", type=str, default=None, choices=["text", "visual", "promptfree", "coco"])
+    parser.add_argument("--mode", type=str, default=None, choices=["lvis", "coco", "geoai"])
+    parser.add_argument("--prompt", type=str, default=None, choices=["text", "visual", "promptfree"])
     parser.add_argument("--weights", type=str, default=None)
     parser.add_argument("--mobileclip", type=str, default=None)
     parser.add_argument("--data", type=str, default=None)
@@ -643,13 +734,60 @@ def parse_args():
     return parser.parse_args()
 
 
+def _resolve_mode_data(cfg: dict, mode: str, cli_data: str | None, cli_split: str | None) -> tuple[dict, str]:
+    """
+    从 cfg['datasets'][mode] 解析该模式的 data yaml 与 split，写回 cfg 顶层，
+    供下游 eval_* 通过 cfg.get('data') / cfg.get('split') 读取。
+    优先级：CLI --data/--split > yaml datasets.<mode> > 各模式内置默认。
+    """
+    ds = (cfg.get("datasets") or {}).get(mode) or {}
+    data = cli_data or ds.get("yaml")
+    split = cli_split or ds.get("split")
+
+    defaults = {"lvis": ("data/val-yolo_dataset/Public-lvis.yaml", "minival"),
+                "coco": ("data/val-yolo_dataset/Public-coco.yaml", "val"),
+                "geoai": ("data/val-yolo_dataset/GEOAI-Smartsecurity.yaml", "val")}
+    d_data, d_split = defaults.get(mode, ("", ""))
+    data = data or d_data
+    split = split or d_split
+    return {**cfg, "data": data, "split": split}, split
+
+
+def _dispatch(cfg, mode, prompt, weights, split, batch, device, fixed_ap, max_det, save_dir):
+    """
+    按 (mode, prompt) 组合分发到对应 eval_* 函数。
+    visual / promptfree 当前仅支持 lvis 数据；coco/geoai 配非 text 时告警并回退 text。
+    """
+    combo = (mode, prompt)
+    if combo == ("lvis", "text"):
+        eval_text(weights, cfg, split, batch, device, fixed_ap, max_det, save_dir)
+    elif combo == ("lvis", "visual"):
+        eval_visual(weights, cfg, split, batch, device, fixed_ap, max_det, save_dir)
+    elif combo == ("lvis", "promptfree"):
+        eval_promptfree(weights, cfg, split, batch, device, fixed_ap, max_det, save_dir)
+    elif mode == "coco" and prompt == "text":
+        eval_coco(weights, cfg, batch, device, save_dir)
+    elif mode == "geoai" and prompt == "text":
+        eval_geoai(weights, cfg, split, batch, device, save_dir)
+    else:
+        print(f"⚠️  {mode} 数据暂不支持 prompt={prompt}，回退为 text")
+        if mode == "coco":
+            eval_coco(weights, cfg, batch, device, save_dir)
+        elif mode == "geoai":
+            eval_geoai(weights, cfg, split, batch, device, save_dir)
+        else:
+            raise ValueError(f"未知评估模式: {mode}")
+
+
 if __name__ == "__main__":
     args = parse_args()
     cfg = load_eval_cfg(args.config)
 
-    mode = pick(args.mode, cfg, "mode", "text")
+    # mode（数据模式）：CLI > 默认 lvis；prompt（提示方式）：CLI > yaml > 默认 text
+    mode = args.mode if args.mode else "lvis"
+    prompt = pick(args.prompt, cfg, "prompt", "text")
+
     weights = pick(args.weights, cfg, "weights", "weights/yoloe-11s-seg.pt")
-    split = pick(args.split, cfg, "split", "minival")
     batch = pick(args.batch, cfg, "batch", 1)
     device = pick(args.device, cfg, "device", "0")
     max_det = pick(args.max_det, cfg, "max_det", None)
@@ -658,8 +796,8 @@ if __name__ == "__main__":
     if isinstance(fixed_ap, str):
         fixed_ap = str2bool(fixed_ap)
 
-    if args.data is not None:
-        cfg = {**cfg, "data": args.data}
+    # 解析该模式的 data/split（CLI 优先，其次 yaml datasets.<mode>）
+    cfg, split = _resolve_mode_data(cfg, mode, args.data, args.split)
 
     plots = pick(str2bool(args.plots), cfg, "plots", True)
     if isinstance(plots, str):
@@ -669,20 +807,11 @@ if __name__ == "__main__":
     mobileclip = resolve_path(pick(args.mobileclip, cfg, "mobileclip", "weights/mobileclip_blt.pt"))
     os.environ["MOBILECLIP_PATH"] = mobileclip
 
-    save_dir = make_save_dir(mode)
+    save_dir = make_save_dir(mode, weights, cfg.get("data", ""))
 
     print(f"📄 配置：{args.config}")
-    print(f"   mode={mode}  split={split}  batch={batch}  fixed_ap={fixed_ap}  plots={plots}  max_det={max_det or ('1000' if fixed_ap else '300')}")
+    print(f"   mode={mode}  prompt={prompt}  split={split}  batch={batch}  fixed_ap={fixed_ap}  plots={plots}  max_det={max_det or ('1000' if fixed_ap else '300')}")
     print(f"   data={cfg.get('data')}  imgsz={cfg.get('imgsz', 640)}")
     print(f"   输出：{save_dir}")
 
-    if mode == "text":
-        eval_text(weights, cfg, split, batch, device, fixed_ap, max_det, save_dir)
-    elif mode == "visual":
-        eval_visual(weights, cfg, split, batch, device, fixed_ap, max_det, save_dir)
-    elif mode == "promptfree":
-        eval_promptfree(weights, cfg, split, batch, device, fixed_ap, max_det, save_dir)
-    elif mode == "coco":
-        eval_coco(weights, cfg, batch, device, save_dir)
-    else:
-        raise ValueError(f"未知评估模式: {mode}")
+    _dispatch(cfg, mode, prompt, weights, split, batch, device, fixed_ap, max_det, save_dir)

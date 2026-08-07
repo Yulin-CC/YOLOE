@@ -39,6 +39,11 @@ class YOLOEPETrainer(DetectionTrainer):
         return model
     
 class YOLOEPESegTrainer(SegmentationTrainer):
+
+    def __init__(self, cfg=DEFAULT_CFG, overrides=None, _callbacks=None):
+        super().__init__(cfg, overrides, _callbacks)
+        from ultralytics.models.yolo.yoloe.config_backup import register_trainer_config_backup
+        register_trainer_config_backup(self)
     
     def get_model(self, cfg=None, weights=None, verbose=True):
         """Return YOLOEModel initialized with specified config and weights."""
