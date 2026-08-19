@@ -123,14 +123,16 @@ def grounding_caches_from_yaml(grounding_yaml: Path) -> list[Path]:
         raise ValueError(f"grounding yaml 缺少 train.grounding_data: {grounding_yaml}")
 
     caches: list[Path] = []
+    from ultralytics.data.utils import resolve_grounding_entry
+
     for entry in grounding_data:
-        json_file = _resolve_path(entry["json_file"])
-        cache_path = json_file.with_suffix(".cache")
+        resolved = resolve_grounding_entry(entry, _resolve_path)
+        cache_path = Path(resolved["json_file"]).with_suffix(".cache")
         if not cache_path.is_file():
             raise FileNotFoundError(
                 f"未找到 grounding cache: {cache_path}\n"
                 f"请先运行: bash 1-data-process/2-create_grounding.sh "
-                f"--json-path {json_file} --img-path {entry['img_path']}"
+                f"--json-path {resolved['json_file']} --img-path {resolved['img_path']}"
             )
         caches.append(cache_path)
     return caches

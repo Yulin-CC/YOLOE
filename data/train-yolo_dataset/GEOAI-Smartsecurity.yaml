@@ -1,11 +1,10 @@
 #【YOLO dataset: SmartSecurity】
-# Dataset Used: 1
 # Categories: 23
+# Quantity：32406
 # Date：2026-08-01
-# train.txt 由 2021–2026 各年 train.txt 汇总至数据集根目录；names 与 classes.yaml 对齐
 
 path: /home/yulin/0-data/2-DroneObject/SmartSecurity/GEOAI-Trainset_SmartSecurity-YOLO
-train: train-probe.txt
+train: train-probe-10.txt
 val: null
 nc: 23
 names:

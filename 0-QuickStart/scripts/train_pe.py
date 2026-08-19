@@ -11,7 +11,6 @@
 """
 import argparse
 import os
-import shutil
 import sys
 import torch
 from pathlib import Path
@@ -129,12 +128,35 @@ def _prepare_pe(model, names: list[str], pe_path: str) -> str:
 
 
 #----------------------------#
-# 备份配置快照（训练启动后写入 save_dir，避免被 Ultralytics 清空）
-# 目录结构：runs/0-train/<project>/config/{args,dataset,vocab}/
+# 备份配置快照：开训前写入 runs/0-train/<project>/{data,config}/
+# 保留仓库相对路径（如 data/train-yolo_dataset/xxx.yaml、config/train_open.yaml）
 #----------------------------#
 def _resolve_config_path(path: str) -> Path:
     p = Path(path)
     return p.resolve() if p.is_absolute() else (ROOT / p).resolve()
+
+
+def _snapshot_rel(src: Path) -> str:
+    """Map a source file to data/ or config/ under the run dir."""
+    src = src.resolve()
+    try:
+        rel = src.relative_to(ROOT)
+        if rel.parts and rel.parts[0] in {"data", "config"}:
+            return str(rel)
+    except ValueError:
+        pass
+    if src.suffix in {".yaml", ".yml"}:
+        return f"data/{src.name}"
+    return f"config/{src.name}"
+
+
+def _append_snapshot(items: list[dict], src: Path):
+    if not src.is_file():
+        return
+    rel = _snapshot_rel(src)
+    rec = {"src": str(src.resolve()), "rel": rel}
+    if rec not in items:
+        items.append(rec)
 
 
 def _resolve_embed_dir(text_model: str) -> Path:
@@ -142,6 +164,18 @@ def _resolve_embed_dir(text_model: str) -> Path:
         if (candidate / "train_label_embeddings.pt").is_file():
             return candidate
     return ROOT / "config" / text_model
+
+
+def _iter_yaml_paths(*values) -> list[str]:
+    paths: list[str] = []
+    for item in values:
+        if not item:
+            continue
+        if isinstance(item, (list, tuple)):
+            paths.extend(str(x) for x in item if x)
+        else:
+            paths.extend(p.strip() for p in str(item).split(",") if p.strip())
+    return paths
 
 
 def backup_train_config(
@@ -152,28 +186,16 @@ def backup_train_config(
     val_yaml: str | None = None,
     include_vocab: bool = False,
 ):
-    """Build copy plan + apply immediately (single-GPU) / stash for DDP child."""
+    """Copy used data/ + config/ files into run_dir before training; stash plan for DDP."""
     from ultralytics.models.yolo.yoloe.config_backup import apply_config_backup, set_config_backup_plan
 
     items: list[dict] = []
 
-    train_cfg = ROOT / _DEFAULT_CFG
-    if train_cfg.is_file():
-        items.append({"src": str(train_cfg.resolve()), "rel": f"args/{train_cfg.name}"})
+    train_cfg = _resolve_config_path(str(_DEFAULT_CFG))
+    _append_snapshot(items, train_cfg)
 
-    yaml_items: list[str] = []
-    for item in (data_yaml, grounding_yaml, val_yaml):
-        if not item:
-            continue
-        if isinstance(item, (list, tuple)):
-            yaml_items.extend(str(x) for x in item if x)
-        else:
-            yaml_items.extend(p.strip() for p in str(item).split(",") if p.strip())
-
-    for yaml_path in yaml_items:
-        src = _resolve_config_path(yaml_path)
-        if src.is_file():
-            items.append({"src": str(src), "rel": f"dataset/{src.name}"})
+    for yaml_path in _iter_yaml_paths(data_yaml, grounding_yaml, val_yaml):
+        _append_snapshot(items, _resolve_config_path(yaml_path))
 
     if include_vocab:
         cfg = _load_train_cfg()
@@ -183,19 +205,15 @@ def backup_train_config(
         embed_dir = _resolve_embed_dir(text_model)
 
         for pt_name in ("global_grounding_neg_embeddings.pt", "train_label_embeddings.pt"):
-            src = embed_dir / pt_name
-            if src.is_file():
-                items.append({"src": str(src.resolve()), "rel": f"vocab/{pt_name}"})
-
+            _append_snapshot(items, embed_dir / pt_name)
         for vocab_path in (vocab_json, neg_vocab):
-            vocab_src = _resolve_config_path(vocab_path)
-            if vocab_src.is_file():
-                items.append({"src": str(vocab_src), "rel": f"vocab/{vocab_src.name}"})
+            _append_snapshot(items, _resolve_config_path(vocab_path))
 
     set_config_backup_plan(items)
-    # Optional eager write (single-GPU). DDP child re-applies on_train_start after save_dir recreate.
     if run_dir:
-        apply_config_backup(run_dir)
+        dest = Path(run_dir)
+        dest.mkdir(parents=True, exist_ok=True)
+        apply_config_backup(dest)
 
 
 def _register_config_backup(
@@ -205,11 +223,12 @@ def _register_config_backup(
     grounding_yaml: str | None = None,
     val_yaml: str | None = None,
     include_vocab: bool = False,
+    project_name: str | None = None,
 ):
-    # Only stash the plan here. Actual copy runs in Trainer.on_train_start
-    # (DDP child does not keep model.add_callback from the parent process).
+    # 开训前写入 runs/0-train/<project>/{data,config}/；on_train_start 再同步到实际 save_dir（DDP / exist_ok）
+    run_dir = ROOT / "runs" / "0-train" / project_name if project_name else ""
     backup_train_config(
-        run_dir="",  # defer write to trainer callback / apply when save_dir ready
+        run_dir=run_dir,
         data_yaml=data_yaml,
         grounding_yaml=grounding_yaml,
         val_yaml=val_yaml,
@@ -317,7 +336,7 @@ def train_linear(args):
     pe_path = f"runs/0-train/{args.project}/pe.pt"
     Path(pe_path).parent.mkdir(parents=True, exist_ok=True)
     _prepare_pe(model, names, pe_path)
-    _register_config_backup(model, args.data)
+    _register_config_backup(model, args.data, project_name=args.project)
 
     train_kwargs = _build_train_kwargs(
         cfg, extends,
@@ -353,7 +372,7 @@ def train_full(args):
     pe_path = f"runs/0-train/{args.project}/pe.pt"
     Path(pe_path).parent.mkdir(parents=True, exist_ok=True)
     _prepare_pe(model, names, pe_path)
-    _register_config_backup(model, args.data)
+    _register_config_backup(model, args.data, project_name=args.project)
 
     train_kwargs = _build_train_kwargs(
         cfg, extends,
@@ -385,7 +404,7 @@ def train_visual(args):
 
     model  = YOLOE(args.model)
     freeze = _freeze_visual(model)
-    _register_config_backup(model, args.data)
+    _register_config_backup(model, args.data, project_name=args.project)
 
     train_kwargs = _build_train_kwargs(
         cfg, extends,
@@ -432,6 +451,7 @@ def train_scratch(args):
         grounding_yaml=getattr(args, "grounding_data", None),
         val_yaml=getattr(args, "val_data", None) or cfg.get("val_data"),
         include_vocab=getattr(args, "backup_vocab", False),
+        project_name=args.project,
     )
 
     train_kwargs = _build_train_kwargs(

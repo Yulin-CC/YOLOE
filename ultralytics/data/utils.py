@@ -40,6 +40,45 @@ VID_FORMATS = {"asf", "avi", "gif", "m4v", "mkv", "mov", "mp4", "mpeg", "mpg", "
 PIN_MEMORY = str(os.getenv("PIN_MEMORY", True)).lower() == "true"  # global pin_memory for dataloaders
 FORMATS_HELP_MSG = f"Supported formats are:\nimages: {IMG_FORMATS}\nvideos: {VID_FORMATS}"
 
+GROUNDING_SEGM_JSON = "train_segm.json"
+GROUNDING_SEGM_CACHE = "train_segm.cache"
+
+
+def resolve_grounding_entry(entry, resolve_fn=None):
+    """Resolve a 0-Grounding.yaml item to ``{img_path, json_file}``.
+
+    Yaml 只需 ``img_path``（通常为 ``<dataset>/images``）；``json_file`` 省略时固定为
+    ``<dataset>/train_segm.json``，cache 为同目录 ``train_segm.cache``。
+    若仍显式写了 ``json_file`` 则沿用（兼容旧 yaml）。
+    """
+    resolve_fn = resolve_fn or (lambda p: Path(p).expanduser().resolve())
+
+    if isinstance(entry, str):
+        img_path = Path(resolve_fn(entry))
+        json_override = None
+    elif isinstance(entry, dict):
+        if not entry.get("img_path"):
+            raise ValueError("grounding_data 条目缺少 img_path")
+        img_path = Path(resolve_fn(entry["img_path"]))
+        json_override = entry.get("json_file")
+    else:
+        raise TypeError(f"grounding_data 条目应为 dict 或路径字符串，收到 {type(entry)}")
+
+    if json_override:
+        json_file = Path(resolve_fn(json_override))
+    else:
+        root = img_path.parent if img_path.name == "images" else img_path
+        json_file = root / GROUNDING_SEGM_JSON
+
+    cache_file = json_file.with_suffix(".cache")
+    if not img_path.is_dir():
+        raise FileNotFoundError(f"grounding images 不存在: {img_path}")
+    if not json_file.is_file() and not cache_file.is_file():
+        raise FileNotFoundError(
+            f"未找到 {GROUNDING_SEGM_JSON} / {GROUNDING_SEGM_CACHE}: {json_file.parent}"
+        )
+    return {"img_path": str(img_path), "json_file": str(json_file)}
+
 
 def img2label_paths(img_paths):
     """Define label paths as a function of image paths."""

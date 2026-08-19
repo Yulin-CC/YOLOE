@@ -6,7 +6,7 @@
  # @Description: YOLOE 开集训练入口，由 train_open.py 统一完成：
  #   词汇表 .pt 请先运行 1-data-process/3-create_vocab_pt.sh 离线生成
  #   Step 1 开集训练（linear/full/visual/scratch，超参从 config/train_open.yaml 读取）
- #   训练启动时自动备份配置至 runs/0-train/$project/config/{args,dataset,vocab}/
+ #   开训前备份 data/ + config/ 至 runs/0-train/$project/{data,config}/
 ###
 WORK_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT="$(cd "$WORK_DIR/.." && pwd)"
@@ -16,7 +16,7 @@ PROJECT_ROOT="$(cd "$WORK_DIR/.." && pwd)"
 #------------------------------------------#
 devices="0,1"                              # GPU ID；多卡 DDP 如 "0,1,2,3"（batch 为全局 batch，自动按卡数均分）
 #------------------------------------------#
-project="YOLOE-Scratch-260708-v0.1.0-Probe"          # 权重保存至 runs/0-train/$project/
+project="YOLOE-Scratch-260819-v0.2.1"          # 权重保存至 runs/0-train/$project/
 #--------------------------------------------------------------------#
 # model="ultralytics/cfg/models/11/yoloe-11-seg.yaml"                  # .pt → 微调；.yaml → scratch
 model="weights/yoloe-11s-seg.pt"

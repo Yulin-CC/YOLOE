@@ -26,46 +26,24 @@ def is_yolo_dir(name: str) -> bool:
 
 
 #----------------------------#
-# 在 GEOAI-*-GD 目录下查找 segm json
-#----------------------------#
-def find_grounding_json_files(dataset_dir: Path) -> list[Path]:
-    json_files: list[Path] = []
-
-    for p in sorted(dataset_dir.glob("*.json")):
-        json_files.append(p.resolve())
-
-    for cache in sorted(dataset_dir.glob("*.cache")):
-        json_path = cache.with_suffix(".json")
-        if json_path.resolve() not in json_files:
-            json_files.append(json_path.resolve())
-
-    return json_files
-
-
-#----------------------------#
 # 单个 GEOAI-*-GD 目录 → grounding_data 条目
+# json/cache 固定为 train_segm.json / train_segm.cache
 #----------------------------#
 def collect_grounding_entries(root: Path, dir_name: str) -> list[dict]:
     dataset_dir = root / dir_name
-    entries = []
+    img_path = dataset_dir / "images"
+    json_file = dataset_dir / "train_segm.json"
+    cache_file = dataset_dir / "train_segm.cache"
 
-    for json_file in find_grounding_json_files(dataset_dir):
-        cache_file = json_file.with_suffix(".cache")
-        if not json_file.is_file() and not cache_file.is_file():
-            continue
+    if not img_path.is_dir():
+        print(f"  ⚠️  跳过 {dir_name}：缺少 images/")
+        return []
+    if not json_file.is_file() and not cache_file.is_file():
+        print(f"  ⚠️  跳过 {dir_name}：缺少 train_segm.json / train_segm.cache")
+        return []
 
-        img_path = dataset_dir / "images"
-        if not img_path.is_dir():
-            print(f"  ⚠️  跳过 {dir_name}：缺少 images/（json={json_file.name}）")
-            continue
-
-        entries.append({
-            "img_path": str(img_path.resolve()),
-            "json_file": str(json_file.resolve()),
-        })
-        print(f"  ✅ {dir_name}: json={json_file.name}, cache={'有' if cache_file.is_file() else '无'}")
-
-    return entries
+    print(f"  ✅ {dir_name}: json={'有' if json_file.is_file() else '无'}, cache={'有' if cache_file.is_file() else '无'}")
+    return [{"img_path": str(img_path.resolve())}]
 
 
 #----------------------------#

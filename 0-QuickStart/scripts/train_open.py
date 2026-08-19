@@ -4,7 +4,7 @@
 # @Description: YOLOE 开集训练封装：
 #   词汇表 .pt 由 1-data-process/3-create_vocab_pt.sh 离线生成
 #   Step 1 开集训练（与 train_pe.py 共用 linear/full/visual/scratch 分发）
-#   训练启动时自动备份配置至 runs/0-train/{project}/config/{args,dataset,vocab}/
+#   开训前备份 data/ + config/ 至 runs/0-train/{project}/{data,config}/
 # @Command: bash 0-QuickStart/0-train_open.sh
 """
 import argparse
@@ -107,13 +107,9 @@ def build_scratch_data(yolo_yaml: str, grounding_yaml: str, val_yaml: str | None
         raise ValueError(f"grounding yaml 缺少 train.grounding_data: {grounding_path}")
 
     # DDP 子进程通过 temp file 反序列化 data dict，路径须为绝对字符串
-    grounding_data = [
-        {
-            "img_path": str(_resolve_path(entry["img_path"])),
-            "json_file": str(_resolve_path(entry["json_file"])),
-        }
-        for entry in grounding_data
-    ]
+    from ultralytics.data.utils import resolve_grounding_entry
+
+    grounding_data = [resolve_grounding_entry(entry, _resolve_path) for entry in grounding_data]
 
     # val 优先：0-YOLO.yaml 索引 > grounding.yaml > config.val_data
     val_cfg = grounding_cfg.get("val") or {}
@@ -174,7 +170,7 @@ if __name__ == "__main__":
 
     #--------------------------------------
     # 开集训练（Ultralytics 多卡 device 自动 spawn DDP）
-    # 训练启动时 on_train_start 自动备份 config/{args,dataset,vocab}/
+    # 开训前备份 data/ + config/ 至 runs/0-train/{project}/；on_train_start 再同步到实际 save_dir
     #--------------------------------------
     print("\n════════════════════════════════════════")
     print(f" 开集训练（mode={args.mode}）")

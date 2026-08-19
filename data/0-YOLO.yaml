@@ -1,7 +1,7 @@
 #【YOLO datasets】
 # Dataset Used: 3
 # Date：2026-08-19
-# 开集训练入口：train/val 指向子数据集 yaml（不要写成单份 Objects365）
+
 
 train:
   - data/train-yolo_dataset/Public-Obj365.yaml

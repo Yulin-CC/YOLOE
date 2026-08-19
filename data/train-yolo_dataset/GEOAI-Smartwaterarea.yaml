@@ -1,11 +1,10 @@
 #【YOLO dataset: SmartWaterarea】
-# Dataset Used: 1
 # Categories: 11
+# Quantity：9677
 # Date：2026-07-31
-# train.txt 由 2021–2026 各年 train.txt 汇总至数据集根目录
 
 path: /home/yulin/0-data/2-DroneObject/SmartWaterarea/GEOAI-Trainset_SmartWaterarea-YOLO
-train: train-probe.txt
+train: train-probe-10.txt
 val: null
 nc: 11
 names:

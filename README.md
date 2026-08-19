@@ -6,11 +6,14 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 
 
 ## 更新日志
-- [x] 2026-06-16 新增 `0-QuickStart/` 推理、评估、PE 微调、开集训练入口
-- [x] 2026-07-02 1. 新增 `1-data-process/` PE 与 Grounding 两套独立数据预处理脚本；2. 新增 `data/yolo/`、`data/grounding/` 训练 yaml 自动生成；3. 开集训练支持 yolo + grounding yaml 合并（scratch 模式）
-- [x] 2026-07-07 1. 调整项目结构，合并数据预处理脚本为 `data/create_data.py`; 2. 解耦项目的配置文件和数据读取文件
-- [x] 2026-07-09 修复环境安装文档，补全 `z-others/requirements.txt` / `pyproject.toml` 及根目录软链
+- [x] 2026-08-19 1. 开训前将 `data/`、`config/` 快照拷至 `runs/0-train/<project>/`；2. Grounding yaml 只需 `img_path`，固定读取 `train_segm.json` / `train_segm.cache`
 - [x] 2026-07-28 1. 新增 `convert_geoai2coco.py`（GEOAI / Grounding → COCO segm）；2. 推理支持目录批量；3. 完善 LabelMe 拆分（iscrowd / group_id）与 COCO 可视化标签解析；4. 删除旧 `convert_labelme_to_coco_bbox.py`
+- [x] 2026-07-09 修复环境安装文档，补全 `z-others/requirements.txt` / `pyproject.toml` 及根目录软链
+- [x] 2026-07-07 1. 调整项目结构，合并数据预处理脚本为 `data/create_data.py`; 2. 解耦项目的配置文件和数据读取文件
+- [x] 2026-07-02 1. 新增 `1-data-process/` PE 与 Grounding 两套独立数据预处理脚本；2. 新增 `data/yolo/`、`data/grounding/` 训练 yaml 自动生成；3. 开集训练支持 yolo + grounding yaml 合并（scratch 模式）
+- [x] 2026-06-16 新增 `0-QuickStart/` 推理、评估、PE 微调、开集训练入口
+
+
 ---
 
 ## README 目录
@@ -146,7 +149,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 
 - 用数据标签处理工具生成 **labels**、**train.txt**、**val.txt**
 
-  - 修改 `1-data-process/1-create_yolodata.sh`
+  - 修改 `1-data-process/2-create_yolodata.sh`
 
     - **Path**：数据集路径
 
@@ -156,7 +159,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 
     ```bash
     cd 1-data-process
-    bash 1-create_yolodata.sh
+    bash 2-create_yolodata.sh
     ```
 
   - 生成的文件如下所示 
@@ -318,7 +321,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 
     ```bash
     cd 1-data-process
-    bash 1-create_yolodata.sh          # 注意修改其中参数，只能处理本就带分割标注的标签
+    bash 2-create_yolodata.sh          # 注意修改其中参数，只能处理本就带分割标注的标签
     # bash 1-create_yolodata_noseg.sh  # 如果标签只有 bbox，请用该命令 
     ```
     - 转换标签 COCO-segment -> yolo
@@ -427,7 +430,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 | 训练配置 | `config/train_pe.yaml` | `config/train_open.yaml` |
 | 推理 / 评估配置 | `config/default_notrain.yaml` | `config/default_notrain.yaml` |
 | 数据目录 | `GEOAI-<name>/` 或 `GEOAI-<name>-YOLO/` | YOLO：`GEOAI-<name>-YOLO/`；Grounding：`GEOAI-<name>-GD/` |
-| 预处理 | `1-create_yolodata.sh` | YOLO：`1-create_yolodata.sh`；Grounding：`2-create_grounding.sh` |
+| 预处理 | `2-create_yolodata.sh` | YOLO：`2-create_yolodata.sh`；Grounding：`2-create_grounding.sh` |
 | yaml 汇总 | 单数据集 yaml（如 `data/yolo/0-Person.yaml`） | `data/create_data.py` → `0-YOLO.yaml` + `0-Grounding.yaml` |
 | 词汇表 | 不需要 | `3-create_vocab_pt.sh`（训练前离线生成 `.pt`） |
 | 训练读取 | yaml + `train.txt` / `val.txt` | YOLO：txt；Grounding：`*_segm.json` + `.cache` |
