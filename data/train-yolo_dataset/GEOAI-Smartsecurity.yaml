@@ -1,0 +1,34 @@
+#【YOLO dataset: SmartSecurity】
+# Dataset Used: 1
+# Categories: 23
+# Date：2026-08-01
+# train.txt 由 2021–2026 各年 train.txt 汇总至数据集根目录；names 与 classes.yaml 对齐
+
+path: /home/yulin/0-data/2-DroneObject/SmartSecurity/GEOAI-Trainset_SmartSecurity-YOLO
+train: train-probe.txt
+val: null
+nc: 23
+names:
+  0: person
+  1: car
+  2: truck
+  3: floatingstuff
+  4: deadfish
+  5: boat
+  6: excavator
+  7: fire
+  8: smoke
+  9: ambulance
+  10: bus
+  11: bulldozer
+  12: specialvehicle
+  13: firetruck
+  14: forklift
+  15: cmixer
+  16: piledriver
+  17: burnmarks
+  18: towercrane
+  19: drillingrig
+  20: heightrestrictionbar
+  21: dronenest
+  22: drone

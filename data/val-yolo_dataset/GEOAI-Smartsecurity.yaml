@@ -1,0 +1,33 @@
+#【YOLO val dataset: SmartSecurity】
+# 由 2021–2026 年目录合并为平铺 images/labels/jsons；class id 与 classes.yaml 对齐
+# 训练中 val 仍用 Public-lvis，本文件供训后 eval.py 域内评测
+# Date：2026-07-31
+
+path: /home/yulin/0-data/2-DroneObject/SmartSecurity/EVAL-TestSet_SmartSecurity
+train: null
+val: test.txt
+nc: 23
+names:
+  0: person
+  1: car
+  2: truck
+  3: floatingstuff
+  4: boat
+  5: excavator
+  6: fire
+  7: smoke
+  8: deadfish
+  9: bulldozer
+  10: specialvehicle
+  11: firetruck
+  12: bus
+  13: piledriver
+  14: cmixer
+  15: burnmarks
+  16: forklift
+  17: drillingrig
+  18: towercrane
+  19: heightrestrictionbar
+  20: ambulance
+  21: dronenest
+  22: drone
