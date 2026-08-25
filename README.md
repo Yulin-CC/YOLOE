@@ -19,19 +19,20 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 ## README 目录
 
 - [0 环境](#0-环境)
-- [1 推理（预训练权重）](#1-推理预训练权重)
-- [2 评估（复现官方 baseline）](#2-评估复现官方baseline)
-- [3 训练 PE 模型（闭集 / 场景迁移）](#3-训练-pe-模型闭集--场景迁移)
-- [4 训练开集模型（YOLO + 文本 grounding）](#4-训练开集模型yolo--文本-grounding)
-- [5 使用训练后的模型推理](#5-使用训练后的模型推理)
-- [6 PE 与 Grounding 对比](#6-pe-与-grounding-对比)
+- [1 项目结构](#1-项目结构)
+- [2 推理（预训练权重）](#2-推理预训练权重)
+- [3 评估（复现官方 baseline）](#3-评估复现官方baseline)
+- [4 训练 PE 模型（闭集 / 场景迁移）](#4-训练-pe-模型闭集--场景迁移)
+- [5 训练开集模型（YOLO + 文本 grounding）](#5-训练开集模型yolo--文本-grounding)
+- [6 使用训练后的模型推理](#6-使用训练后的模型推理)
+- [7 PE 与 Grounding 对比](#7-pe-与-grounding-对比)
 - [附录：数据集（百度云）](#附录-数据集百度云)
 - [参考](#参考)
 
 ---
 ## 0 环境
 
-> ⭐ 先搜索项目中的 source "/home/ubuntu/miniconda3/etc/profile.d/conda.sh"，将其改成实际的conda路径
+> ⭐ 先搜索项目中的 `source /path/to/miniconda3/etc/profile.d/conda.sh`，将其改成实际的 conda 路径
 
 - 必装环境
 
@@ -77,7 +78,30 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 
 ---
 
-## 1 推理（预训练权重）
+## 1 项目结构
+
+```
+yoloe-main/
+├── 0-QuickStart/              # 训练 / 推理 / 评估入口
+│   ├── 0-train_open.sh        # 开集训练
+│   ├── 0-train_pe.sh          # PE 微调
+│   ├── 1-inference.sh         # 推理
+│   ├── 2-eval.sh              # 评估
+│   └── scripts/               # Python CLI
+├── 1-data-process/            # 数据预处理
+├── config/                    # 训练 / 推理 yaml
+├── data/                      # 数据集索引 yaml
+├── ultralytics/               # 上游核心代码
+├── weights/                   # 预训练权重（需自行下载）
+├── runs/                      # 训练 / 评估输出
+├── third_party/               # SAM2 / CLIP 等
+├── z-others/                  # 官方 README、pyproject 等
+└── README.md
+```
+
+---
+
+## 2 推理（预训练权重）
 
 - 修改 `0-QuickStart/1-inference.sh` 中的图像路径、文本提示和模型路径
 
@@ -94,20 +118,23 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
   ```bash
   bash 0-QuickStart/1-inference.sh
   ```
-## 2 评估（复现官方baseline）
 
-- 2.1 数据准备：
+---
+
+## 3 评估（复现官方baseline）
+
+- 3.1 数据准备：
 
   - 需要准备 LVIS 和 COCO 数据
   - 下载链接：见附录
   - 解压
 
-- 2.2 修改数据路径：
+- 3.2 修改数据路径：
 
   - LVIS 评估：编辑 `ultralytics/cfg/datasets/lvis.yaml` 中的 `path:` 为你的 LVIS 实际路径
   - COCO 评估：编辑 `ultralytics/cfg/datasets/coco.yaml` 中的 `path:` 为你的 COCO 实际路径
 
-- 2.3 执行下面命令
+- 3.3 执行下面命令
 
   ```bash
   bash 0-QuickStart/2-eval.sh  # 修改其中的参数为具体参数，或修改 config/default_open.yaml
@@ -115,13 +142,13 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
   
 ---
 
-## 3 训练 PE 模型（闭集 / 场景迁移）
+## 4 训练 PE 模型（闭集 / 场景迁移）
 
 > **PE 流程**：标准 YOLO 分割标注 → 微调已有 `.pt` 权重。**不使用 Grounding 数据。**
 
-### 📁 3.1 PE 训练验证数据集
+### 📁 4.1 PE 训练验证数据集
 
-#### 3.1.1 PE 数据集结构如下所示
+#### 4.1.1 PE 数据集结构如下所示
 
 - 单数据集结构（标注转换前）
 
@@ -145,7 +172,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
   │       └── val.txt                 # 验证索引
   ```
 
-#### 3.1.2 准备自己的 PE 数据集
+#### 4.1.2 准备自己的 PE 数据集
 
 - 用数据标签处理工具生成 **labels**、**train.txt**、**val.txt**
 
@@ -189,7 +216,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
     python create_data.py
     ```
 
-### 3.2 🔧 修改配置文件
+### 4.2 🔧 修改配置文件
 
 - 修改 `0-QuickStart/0-train_pe.sh`
 
@@ -209,7 +236,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 
   - **mode=visual**：仅训练 SAVPE 模块，推荐 epochs=2
 
-### 3.3 🚀 开始 PE 训练
+### 4.3 🚀 开始 PE 训练
 
   ```bash
   bash 0-QuickStart/0-train_pe.sh
@@ -217,11 +244,11 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 
 ---
 
-## 4 训练开集模型（YOLO + 文本 grounding）
+## 5 训练开集模型（YOLO + 文本 grounding）
 
-### 📁 4.1 训练数据集
+### 📁 5.1 训练数据集
 
-#### 4.1.1 训练/验证数据集概览 (数据集下载见附录)
+#### 5.1.1 训练/验证数据集概览 (数据集下载见附录)
 
 - **a. 汇总结构示例**
 
@@ -313,7 +340,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 
   ```
 
-#### 4.1.2 处理数据集
+#### 5.1.2 处理数据集
 
 - **训练数据集（YOLO）**
 
@@ -368,7 +395,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
   > 修改 `ultralytics/cfg/datasets/lvis.yaml`中的`path`参数成 EVAL-LVIS 的路径
 
 
-#### 4.1.3 汇总数据集
+#### 5.1.3 汇总数据集
 
   - 处理完所有数据集后，进行汇总读取，再次确认数据格式
 
@@ -382,7 +409,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
     ```
 
 
-### 4.2 🔧 配置文件
+### 5.2 🔧 配置文件
 
 - a. 生成开集词汇表
 
@@ -399,7 +426,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 
   > 修改如 epochs / batch / lr / imgsz 等参数
 
-### 🚀 4.3 开始开集训练
+### 🚀 5.3 开始开集训练
 
   - 修改训练配置 `0-QuickStart/0-train_open.sh`
 
@@ -410,7 +437,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 
 ---
 
-## 5 使用训练后的模型推理
+## 6 使用训练后的模型推理
 
 - 修改 `0-QuickStart/1-inference.sh` 中的模型权重路径
 
@@ -422,9 +449,9 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 
 ---
 
-## 6 PE 与 Grounding 对比
+## 7 PE 与 Grounding 对比
 
-|  | PE 微调（§3） | Grounding 开集（§4） |
+|  | PE 微调（§4） | Grounding 开集（§5） |
 |--|--------------|---------------------|
 | 入口 | `0-train_pe.sh` | `0-train_open.sh` |
 | 训练配置 | `config/train_pe.yaml` | `config/train_open.yaml` |

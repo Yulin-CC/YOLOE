@@ -80,13 +80,25 @@ def predict_text(model, source, names, output, device, predict_cfg: dict):
 
     images = _list_images(source)
     print(f"📷 待推理图片：{len(images)} 张")
+    print(
+        f"   save={bool(predict_cfg.get('save'))}  "
+        f"save_crop={bool(predict_cfg.get('save_crop'))}  "
+        f"save_txt={bool(predict_cfg.get('save_txt'))}  "
+        f"save_conf={bool(predict_cfg.get('save_conf'))}"
+    )
     for i, img_path in enumerate(images, 1):
         print(f"\n[{i}/{len(images)}] {img_path.name}")
         image = Image.open(img_path).convert("RGB")
-        kwargs = _build_predict_kwargs(predict_cfg, source=image, verbose=True, save=False)
+        # 关闭 Ultralytics 自带落盘（否则会写到 runs/），改由 --output 按 yaml 开关写出
+        kwargs = _build_predict_kwargs(
+            predict_cfg, source=image, verbose=True,
+            save=False, save_crop=False, save_txt=False, save_frames=False,
+        )
         results = model.predict(**kwargs)
         _print_detections(results[0])
-        _save_annotated(image, results[0], output, str(img_path), predict_cfg)
+        if predict_cfg.get("save", True):
+            _save_annotated(image, results[0], output, str(img_path), predict_cfg)
+        _export_artifacts(image, results[0], output, img_path, predict_cfg)
 
 
 #----------------------------#
@@ -206,10 +218,71 @@ def _save_annotated(image, result, output, source, predict_cfg: dict | None = No
     if labels:
         annotated = sv.LabelAnnotator(color_lookup=sv.ColorLookup.INDEX, text_scale=text_scale, smart_position=True).annotate(annotated, detections, labels)
 
-    out_path = Path(output) / Path(source).name
+    out_path = Path(output) / "vis" / Path(source).name
     out_path.parent.mkdir(parents=True, exist_ok=True)
     annotated.save(str(out_path))
-    print(f"✅ 推理完成，结果已保存：{out_path}")
+    print(f"✅ 可视化已保存：{out_path}")
+
+
+#----------------------------#
+# crop 文件名
+#----------------------------#
+def _slug_name(name: str) -> str:
+    """类名转文件名：空格改下划线，去掉路径非法字符。"""
+    slug = re.sub(r"[\\/:*?\"<>|]+", "_", str(name)).strip()
+    return re.sub(r"\s+", "_", slug) or "object"
+
+
+def _crop_filename(cls_name: str, conf: float, used: dict) -> str:
+    """crop 文件名：{类名}_{置信度}.jpg，重名时追加 _2、_3。"""
+    stem = f"{_slug_name(cls_name)}_{conf:.2f}"
+    n = used.get(stem, 0) + 1
+    used[stem] = n
+    return f"{stem}.jpg" if n == 1 else f"{stem}_{n}.jpg"
+
+
+#----------------------------#
+# 按 yaml 写出 txt / crop 到 --output
+#----------------------------#
+def _export_artifacts(image, result, output, img_path: Path, predict_cfg: dict):
+    """按 yaml 的 save_txt / save_crop 写出到 --output，而不是 runs/。"""
+    out = Path(output)
+    if predict_cfg.get("save_txt"):
+        txt_path = out / "labels" / f"{img_path.stem}.txt"
+        result.save_txt(str(txt_path), save_conf=bool(predict_cfg.get("save_conf")))
+        if txt_path.is_file():
+            print(f"   labels → {txt_path}")
+    if predict_cfg.get("save_crop"):
+        _save_crops(image, result, out, img_path)
+
+
+def _save_crops(image, result, output: Path, img_path: Path):
+    """crops/<图名>/{类名}_{conf}.jpg，每张原图一个文件夹。"""
+    boxes = result.boxes
+    n_boxes = 0 if boxes is None else len(boxes)
+    if not n_boxes:
+        print("   crops  → 无检测，跳过")
+        return
+
+    crop_dir = Path(output) / "crops" / img_path.stem
+    crop_dir.mkdir(parents=True, exist_ok=True)
+    names = result.names
+    used = {}
+    w, h = image.size
+    xyxy = boxes.xyxy.cpu().numpy()
+    cls_ids = boxes.cls.int().cpu().tolist()
+    confs = boxes.conf.cpu().tolist()
+    n_saved = 0
+    for box, cid, conf in zip(xyxy, cls_ids, confs):
+        x1, y1, x2, y2 = (int(round(v)) for v in box)
+        x1, y1 = max(0, x1), max(0, y1)
+        x2, y2 = min(w, x2), min(h, y2)
+        if x2 <= x1 or y2 <= y1:
+            continue
+        fname = _crop_filename(names[cid], float(conf), used)
+        image.crop((x1, y1, x2, y2)).save(crop_dir / fname, quality=95)
+        n_saved += 1
+    print(f"   crops  → {crop_dir}  ({n_saved} 个目标)")
 
 
 #----------------------------#

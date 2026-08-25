@@ -275,8 +275,7 @@ class SegmentationValidator(DetectionValidator):
             rle["counts"] = rle["counts"].decode("utf-8")
             return rle
 
-        stem = Path(filename).stem
-        image_id = int(stem) if stem.isnumeric() else stem
+        image_id = self._resolve_eval_image_id(filename)
         box = ops.xyxy2xywh(predn[:, :4])  # xywh
         box[:, :2] -= box[:, 2:] / 2  # xy center to top-left corner
         pred_masks = np.transpose(pred_masks, (2, 0, 1))
@@ -334,7 +333,7 @@ class SegmentationValidator(DetectionValidator):
 
                 for i, eval in enumerate(vals):
                     print("=" * 40, "BOX EVAL" if i == 0 else "MASK EVAL", "=" * 40)
-                    eval.params.imgIds = [int(Path(x).stem) for x in self.dataloader.dataset.im_files]  # im to eval
+                    eval.params.imgIds = [self._resolve_eval_image_id(x) for x in self.dataloader.dataset.im_files]
                     eval.evaluate()
                     eval.accumulate()
                     eval.summarize()

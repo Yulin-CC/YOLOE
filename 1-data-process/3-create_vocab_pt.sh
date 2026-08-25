@@ -17,7 +17,7 @@ neg_vocab="config/vocab/global_grounding_neg_cat.json"
 #----------------------------------------------------------#
 vocab_json="config/vocab/train_label_embeddings.json"      # 可选：输出，同步写出词汇表 JSON 备份
 #----------------------------------------------------------#
-min_freq=100       # 负样本短语最小出现次数
+min_freq=50        # 负样本短语最小出现次数（安防小数据；100 只剩 78 词不够 pad 到 80）
 force="--force"    # 强制重建 .pt （可注释掉）
 #----------------------------------------------------------#
 mobileclip="./weights/mobileclip_blt.pt"                   # MobileCLIP 权重（编码类别文本必需）
@@ -26,7 +26,7 @@ mobileclip="./weights/mobileclip_blt.pt"                   # MobileCLIP 权重�
 #---------------#
 # 切换到虚拟环境
 #---------------#
-source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
+source /path/to/miniconda3/etc/profile.d/conda.sh
 conda activate yoloe
 
 # 脚本在 1-data-process/ 下执行，Python 工具以项目根目录解析相对路径

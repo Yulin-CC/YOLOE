@@ -27,7 +27,7 @@ background=1                               # 1=后台运行（nohup）；0=前�
 # epochs / batch / lr 等超参从 config/train_pe.yaml 中 train.defaults 读取，无需在此修改
 
 
-source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
+source /path/to/miniconda3/etc/profile.d/conda.sh
 conda activate yoloe
 
 

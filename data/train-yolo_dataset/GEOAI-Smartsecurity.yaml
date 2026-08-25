@@ -3,8 +3,8 @@
 # Quantity：32406
 # Date：2026-08-01
 
-path: /home/yulin/0-data/2-DroneObject/SmartSecurity/GEOAI-Trainset_SmartSecurity-YOLO
-train: train-probe-10.txt
+path: /path/to/2-DroneObject/SmartSecurity/GEOAI-Trainset_SmartSecurity-YOLO
+train: train-probe-10-r25.txt
 val: null
 nc: 23
 names:

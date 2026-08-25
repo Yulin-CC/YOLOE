@@ -24,7 +24,7 @@ config="config/default_notrain.yaml"          # 评估配置 yaml
 #---------------------------------------------#e
 
 
-source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
+source /path/to/miniconda3/etc/profile.d/conda.sh
 conda activate yoloe
 
 
@@ -48,6 +48,6 @@ python 0-QuickStart/scripts/eval.py \
 
 
 # 数据集验证数据读取路径：
-# lvis 验证数据读取路径：/home/yulin/0-data/0-public/grounding/EVAL-LVIS/annotations/lvis_v1_minival.json
-# coco 验证数据读取路径: /home/yulin/0-data/0-public/grounding/EVAL-COCO2017/annotations/instances_val2017.json
+# lvis 验证数据读取路径：/path/to/EVAL-LVIS/annotations/lvis_v1_minival.json
+# coco 验证数据读取路径: /path/to/EVAL-COCO2017/annotations/instances_val2017.json
 # geoai 验证数据读取路径：config eval.datasets.geoai.yaml（默认 data/val-yolo_dataset/GEOAI-Smartsecurity.yaml）

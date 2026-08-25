@@ -24,6 +24,9 @@ weights/
 # Grounding 训练 cache
 *.cache
 
+# Agent 工作目录（本机路径 / 实验结果）
+0-Agent-demo/
+
 # 环境 / 系统
 .env
 .DS_Store

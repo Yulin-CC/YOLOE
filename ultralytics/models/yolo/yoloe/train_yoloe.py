@@ -28,7 +28,11 @@ class YOLOETrainerFromScratch(YOLOETrainer):
         """
         gs = max(int(de_parallel(self.model).stride.max() if self.model else 0), 32)
         if mode != "train":
-            return build_yolo_dataset(self.args, img_path, batch, self.data, mode=mode, rect=False, stride=gs, load_vp=False)
+            # 建 val 集必须用 val yaml 的真实 names/nc（如 LVIS 1203、安防 384）。
+            # self.data["names"] 是 80 个占位符，用来避免词表写进权重；若拿它扫 labels，
+            # class_id≥80 会被当成 corrupt 丢掉，官方 LVIS JSON 评测也会只剩几张图。
+            val_data = getattr(self, "val_data", None) or self.data
+            return build_yolo_dataset(self.args, img_path, batch, val_data, mode=mode, rect=False, stride=gs, load_vp=False)
         dataset = [
             build_yolo_dataset(self.args, im_path, batch, self.training_data[im_path], stride=gs, multi_modal=True)
             if isinstance(im_path, str)
@@ -75,6 +79,8 @@ class YOLOETrainerFromScratch(YOLOETrainer):
         # NOTE: add path with lvis path
         final_data["path"] = data["val"][0]["path"]
         self.data = final_data
+        # val 扫盘 / LVIS 官方 JSON 评测用真实 names；模型侧仍用上面的 80 占位符
+        self.val_data = data["val"][0]
         self.training_data = {}
         for d in data["train"]:
             self.training_data[d["train"]] = d

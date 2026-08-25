@@ -20,11 +20,11 @@ predict:
   embed:          null                          # [推理] 返回指定层的特征向量
   max_det:        300                           # [推理] 每张图最大检测数
   show:           false                         # [可视化] 弹窗显示结果
-  save:           true                          # [可视化] 保存预测结果
-  save_frames:    false                        # [可视化] 保存视频逐帧图片
-  save_txt:       false                        # [可视化] 保存 .txt 标签
+  save:           true                         # [可视化] 保存叠框图到 --output/vis/
+  save_frames:    false                        # [可视化] 保存视频逐帧图片（text 模式忽略）
+  save_txt:       false                        # [可视化] 保存 .txt 标签到 --output/labels/
   save_conf:      false                        # [可视化] txt 中附带置信度
-  save_crop:      false                        # [可视化] 保存裁剪目标图
+  save_crop:      true                         # [可视化] 保存裁剪图到 --output/crops/<图名>/，文件名末尾带置信度
   show_labels:    true                         # [可视化] 显示类别标签
   show_conf:      true                         # [可视化] 显示置信度
   show_boxes:     true                         # [可视化] 显示检测框

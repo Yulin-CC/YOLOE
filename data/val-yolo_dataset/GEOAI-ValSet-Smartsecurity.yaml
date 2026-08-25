@@ -1,0 +1,396 @@
+#【YOLO val dataset: SmartSecurity ValSet】
+# 无人机开集验证集（jsons-GD 短语词表），按 LVIS 官方流程评测
+# annotations/lvis_v1_val.json + is_lvis=true → LVISEval Box/Mask AP、APr/APc/APf
+# Date：2026-08-22
+
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: /path/to/2-DroneObject/SmartSecurity/EVAL-ValSet_SmartSecurity-GD
+train: null
+val: val.txt # val images (relative to 'path') 300 images
+
+nc: 384
+names:
+  0: ambulance with blue and red lights
+  1: beige bulldozer
+  2: beige car
+  3: black boat
+  4: black car
+  5: black excavator
+  6: black truck
+  7: blue bulldozer
+  8: blue bus
+  9: blue car
+  10: blue excavator
+  11: blue piledriver
+  12: blue specialvehicle
+  13: blue truck
+  14: blurred floatingstuff
+  15: boat with metal railings
+  16: boat with red interior
+  17: box truck
+  18: brown boat
+  19: brown car
+  20: brown truck
+  21: bulldozer with black cab
+  22: bulldozer with black tracks
+  23: bulldozer with blue cab
+  24: bulldozer with front blade
+  25: bulldozer with yellow blade
+  26: car with black roof
+  27: car with black sunroof
+  28: car with black windows
+  29: car with blue and red lights
+  30: car with pink side mirrors
+  31: car with roof rack
+  32: car with sunroof
+  33: car with white cover
+  34: car with white text
+  35: colorful floatingstuff
+  36: construction excavator
+  37: dark blue car
+  38: dark blue floatingstuff
+  39: dark blue truck
+  40: dark brown car
+  41: dark car
+  42: dark gray car
+  43: dark gray truck
+  44: dark green car
+  45: dark green floatingstuff
+  46: dark green truck
+  47: dark red car
+  48: dark red floatingstuff
+  49: dark truck
+  50: deadfish with dark markings
+  51: deadfish with mottled gray skin
+  52: deadfish with pale underbelly
+  53: deadfish with pink fins
+  54: deadfish with pinkish tail
+  55: deadfish with white body
+  56: dirt covered specialvehicle
+  57: dirt-covered excavator
+  58: drillingrig with yellow helmets
+  59: dusty bulldozer
+  60: dusty excavator
+  61: dusty yellow bulldozer
+  62: excavator with black arm
+  63: excavator with blue accents
+  64: excavator with blue text
+  65: excavator with gray cab
+  66: excavator with white cab
+  67: flatbed truck
+  68: flower floatingstuff
+  69: forklift with white roof
+  70: glowing floatingstuff
+  71: glowing green deadfish
+  72: gold truck
+  73: gray boat
+  74: gray bus
+  75: gray car
+  76: gray deadfish
+  77: gray excavator
+  78: gray floatingstuff
+  79: gray piledriver
+  80: gray specialvehicle
+  81: gray truck
+  82: green boat
+  83: green bus
+  84: green car
+  85: green deadfish
+  86: green excavator
+  87: green floatingstuff
+  88: green specialvehicle
+  89: green truck
+  90: light blue bus
+  91: light blue car
+  92: light blue floatingstuff
+  93: light blue truck
+  94: long yellow specialvehicle
+  95: metal drillingrig
+  96: metal piledriver
+  97: metallic excavator
+  98: metallic specialvehicle
+  99: mottled green deadfish
+  100: orange bulldozer
+  101: orange car
+  102: orange excavator
+  103: orange forklift
+  104: orange piledriver
+  105: orange specialvehicle
+  106: orange truck
+  107: pale deadfish
+  108: person holding light-colored object
+  109: person holding red bag
+  110: person wearing a cap
+  111: person wearing a hat
+  112: person wearing a mask
+  113: person wearing beige coat
+  114: person wearing black backpack
+  115: person wearing black beanie
+  116: person wearing black cap
+  117: person wearing black clothing
+  118: person wearing black gloves
+  119: person wearing black hat
+  120: person wearing black jacket
+  121: person wearing black leggings
+  122: person wearing black long-sleeve shirt
+  123: person wearing black mask
+  124: person wearing black pants
+  125: person wearing black shirt
+  126: person wearing black shoes
+  127: person wearing black shorts
+  128: person wearing black skirt
+  129: person wearing black sleeve
+  130: person wearing black t-shirt
+  131: person wearing black top
+  132: person wearing black track pants
+  133: person wearing black vest
+  134: person wearing black waist bag
+  135: person wearing blue boots
+  136: person wearing blue cap
+  137: person wearing blue gloves
+  138: person wearing blue helmet
+  139: person wearing blue hoodie
+  140: person wearing blue jacket
+  141: person wearing blue jeans
+  142: person wearing blue mask
+  143: person wearing blue pants
+  144: person wearing blue plaid jacket
+  145: person wearing blue plaid shirt
+  146: person wearing blue sandals
+  147: person wearing blue shirt
+  148: person wearing blue vest
+  149: person wearing brown dress
+  150: person wearing brown jacket
+  151: person wearing brown pants
+  152: person wearing brown shoes
+  153: person wearing camouflage jacket
+  154: person wearing cap
+  155: person wearing conical hat
+  156: person wearing dark armor
+  157: person wearing dark blue jacket
+  158: person wearing dark blue pants
+  159: person wearing dark blue shirt
+  160: person wearing dark blue uniform
+  161: person wearing dark cap
+  162: person wearing dark clothing
+  163: person wearing dark green jacket
+  164: person wearing dark hat
+  165: person wearing dark jacket
+  166: person wearing dark pants
+  167: person wearing dark patterned dress
+  168: person wearing dark purple shirt
+  169: person wearing dark red jacket
+  170: person wearing dark red shirt
+  171: person wearing dark red top
+  172: person wearing dark shirt
+  173: person wearing dark shoes
+  174: person wearing dark shorts
+  175: person wearing dark top
+  176: person wearing dark vest
+  177: person wearing glasses
+  178: person wearing gray cap
+  179: person wearing gray hat
+  180: person wearing gray helmet
+  181: person wearing gray jacket
+  182: person wearing gray pants
+  183: person wearing gray shirt
+  184: person wearing gray suit
+  185: person wearing gray sweater
+  186: person wearing green apron
+  187: person wearing green cap
+  188: person wearing green hat
+  189: person wearing green jacket
+  190: person wearing green pants
+  191: person wearing green safety vest
+  192: person wearing green shirt
+  193: person wearing green shoes
+  194: person wearing green striped shirt
+  195: person wearing green top
+  196: person wearing hat
+  197: person wearing helmet
+  198: person wearing high-visibility vest
+  199: person wearing khaki pants
+  200: person wearing light blue hat
+  201: person wearing light blue jacket
+  202: person wearing light blue jeans
+  203: person wearing light blue mask
+  204: person wearing light blue pants
+  205: person wearing light blue shirt
+  206: person wearing light gray pants
+  207: person wearing light gray sweatshirt
+  208: person wearing light green garment
+  209: person wearing light jacket
+  210: person wearing light pants
+  211: person wearing light pink shirt
+  212: person wearing light purple shirt
+  213: person wearing light shirt
+  214: person wearing light shorts
+  215: person wearing light top
+  216: person wearing maroon hooded jacket
+  217: person wearing maroon jacket
+  218: person wearing mask
+  219: person wearing navy blue shirt
+  220: person wearing neon yellow vest
+  221: person wearing olive green jacket
+  222: person wearing orange jacket
+  223: person wearing orange shirt
+  224: person wearing orange top
+  225: person wearing orange vest
+  226: person wearing patterned pants
+  227: person wearing patterned top
+  228: person wearing pink gloves
+  229: person wearing pink hat
+  230: person wearing pink helmet
+  231: person wearing pink jacket
+  232: person wearing pink mask
+  233: person wearing pink pants
+  234: person wearing pink patterned jacket
+  235: person wearing pink patterned shirt
+  236: person wearing pink shirt
+  237: person wearing pink shoes
+  238: person wearing pink top
+  239: person wearing plaid scarf
+  240: person wearing plaid shirt
+  241: person wearing purple clothing
+  242: person wearing purple gloves
+  243: person wearing purple jacket
+  244: person wearing purple pants
+  245: person wearing purple plaid shirt
+  246: person wearing purple shirt
+  247: person wearing purple top
+  248: person wearing red accessory
+  249: person wearing red and black clothing
+  250: person wearing red and black jacket
+  251: person wearing red and blue jacket
+  252: person wearing red and yellow shorts
+  253: person wearing red beanie
+  254: person wearing red cap
+  255: person wearing red clothing
+  256: person wearing red coat
+  257: person wearing red dress
+  258: person wearing red gloves
+  259: person wearing red hard hat
+  260: person wearing red hat
+  261: person wearing red helmet
+  262: person wearing red hood
+  263: person wearing red jacket
+  264: person wearing red pants
+  265: person wearing red scarf
+  266: person wearing red shirt
+  267: person wearing red shoes
+  268: person wearing red shorts
+  269: person wearing red sneakers
+  270: person wearing red top
+  271: person wearing straw hat
+  272: person wearing striped shirt
+  273: person wearing striped sweater
+  274: person wearing teal shirt
+  275: person wearing tie
+  276: person wearing white cap
+  277: person wearing white dress
+  278: person wearing white hard hat
+  279: person wearing white hat
+  280: person wearing white helmet
+  281: person wearing white hood
+  282: person wearing white jacket
+  283: person wearing white mask
+  284: person wearing white pants
+  285: person wearing white shirt
+  286: person wearing white shoes
+  287: person wearing white sneakers
+  288: person wearing white socks
+  289: person wearing white striped shirt
+  290: person wearing white t-shirt
+  291: person wearing white top
+  292: person wearing yellow cap
+  293: person wearing yellow hat
+  294: person wearing yellow helmet
+  295: person wearing yellow jacket
+  296: person wearing yellow safety vest
+  297: person wearing yellow shirt
+  298: person wearing yellow sleeves
+  299: person wearing yellow vest
+  300: person with arms crossed
+  301: person with black hair
+  302: person with brown hair
+  303: person with dark hair
+  304: person with gray hair
+  305: person with light hair
+  306: person with long hair
+  307: person with red hair
+  308: person with short black hair
+  309: person with short dark hair
+  310: person with short hair
+  311: person with white shoe
+  312: pink boat
+  313: pink car
+  314: pink deadfish
+  315: pink floatingstuff
+  316: red and white ambulance
+  317: red and white bus
+  318: red and white striped truck
+  319: red boat
+  320: red bus
+  321: red car
+  322: red excavator
+  323: red floatingstuff
+  324: red piledriver
+  325: red specialvehicle
+  326: red towercrane
+  327: red truck
+  328: rusted specialvehicle
+  329: rusty drillingrig
+  330: rusty truck
+  331: shiny black car
+  332: silver car
+  333: silver truck
+  334: small boat
+  335: small white deadfish
+  336: square floatingstuff
+  337: striped floatingstuff
+  338: tan excavator
+  339: textured floatingstuff
+  340: translucent deadfish
+  341: truck carrying white furniture
+  342: truck with beige cargo cover
+  343: truck with blue and red lights
+  344: truck with blue and red markings
+  345: truck with blue logo
+  346: truck with cargo
+  347: truck with cargo bed
+  348: truck with dark cargo bed
+  349: truck with gold lettering
+  350: truck with green canvas cover
+  351: truck with green logo
+  352: truck with green tarp
+  353: truck with light blue roof
+  354: truck with metal cage
+  355: truck with metal rack
+  356: truck with red roof
+  357: truck with white lettering
+  358: weathered red boat
+  359: weathered truck
+  360: white ambulance
+  361: white and blue floatingstuff
+  362: white and red floatingstuff
+  363: white boat
+  364: white bus
+  365: white car
+  366: white covered car
+  367: white deadfish
+  368: white excavator
+  369: white floatingstuff
+  370: white forklift
+  371: white specialvehicle
+  372: white truck
+  373: wooden boat
+  374: wooden truck
+  375: yellow bulldozer
+  376: yellow bus
+  377: yellow car
+  378: yellow excavator
+  379: yellow piledriver
+  380: yellow specialvehicle
+  381: yellow towercrane
+  382: yellow tracked excavator
+  383: yellow truck

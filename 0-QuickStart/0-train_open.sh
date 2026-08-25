@@ -2,8 +2,9 @@
 ###
  # @Author: 算法组 蔡雨霖
  # @Date: 2026-06-16
- # @LastEditTime: 2026-07-07
+ # @LastEditTime: 2026-08-24
  # @Description: YOLOE 开集训练入口，由 train_open.py 统一完成：
+ #   正式配方：Flickr+GQA+安防 GD + 安防 YOLO probe-10×25%
  #   词汇表 .pt 请先运行 1-data-process/3-create_vocab_pt.sh 离线生成
  #   Step 1 开集训练（linear/full/visual/scratch，超参从 config/train_open.yaml 读取）
  #   开训前备份 data/ + config/ 至 runs/0-train/$project/{data,config}/
@@ -16,9 +17,8 @@ PROJECT_ROOT="$(cd "$WORK_DIR/.." && pwd)"
 #------------------------------------------#
 devices="0,1"                              # GPU ID；多卡 DDP 如 "0,1,2,3"（batch 为全局 batch，自动按卡数均分）
 #------------------------------------------#
-project="YOLOE-Scratch-260819-v0.2.1"          # 权重保存至 runs/0-train/$project/
+project="YOLOE-Scratch-260824-v0.3.0"          # 权重保存至 runs/0-train/$project/
 #--------------------------------------------------------------------#
-# model="ultralytics/cfg/models/11/yoloe-11-seg.yaml"                  # .pt → 微调；.yaml → scratch
 model="weights/yoloe-11s-seg.pt"
 mobileclip="./weights/mobileclip_blt.pt"                             # MobileCLIP 文本编码器权重（必需）
 #--------------------------------------------------------------------#
@@ -32,7 +32,7 @@ background=1                                            # 1=后台运行（nohup
 # epochs / batch / lr 等超参从 config/train_open.yaml 中读取，无需在此修改
 
 
-source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
+source /path/to/miniconda3/etc/profile.d/conda.sh
 conda activate yoloe
 
 

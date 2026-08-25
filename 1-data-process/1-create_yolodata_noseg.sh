@@ -30,7 +30,7 @@ if [ ! -d "${Path}/images" ] || [ ! -d "${Path}/jsons" ]; then
     exit 1
 fi
 
-source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
+source /path/to/miniconda3/etc/profile.d/conda.sh
 
 #---------------#
 # Step 1：LabelMe → COCO bbox

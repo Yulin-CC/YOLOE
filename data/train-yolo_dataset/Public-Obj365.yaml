@@ -3,7 +3,7 @@
 # Quantity：608253
 # Date：2026-08-19
 
-path: /home/yulin/0-data/0-public/grounding/GEOAI-Objects365v1-2607-YOLO
+path: /path/to/0-public/grounding/GEOAI-Objects365v1-2607-YOLO
 train: train.txt
 val: null
 nc: 365

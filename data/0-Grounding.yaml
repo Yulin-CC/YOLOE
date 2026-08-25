@@ -1,11 +1,12 @@
 #【Grounding datasets】
-# Quantity：4
-# Date：2026-08-19
+# 正式配方：Flickr + GQA 垫开集 + 安防自采 GD
+# 缺公共 GD 时颜色短语分会被压扁（见 demo v1 / ColorCar）
 # json/cache 固定为 <dataset>/train_segm.json 与 train_segm.cache（与 images/ 同级）
+# Date：2026-08-24
 
 train:
   grounding_data:
-  - img_path: /home/yulin/0-data/0-public/grounding/GEOAI-Flickr30k-2607-GD/images
-  - img_path: /home/yulin/0-data/0-public/grounding/GEOAI-GQA-2607-GD/images
-  - img_path: /home/yulin/0-data/2-DroneObject/SmartSecurity/GEOAI-Trainset_SmartSecurity-GD/images
-  # - img_path: /home/yulin/0-data/2-DroneObject/SmartCity/GEOAI-Trainset_SmartCity-GD-demo/images
+  - img_path: /path/to/0-public/grounding/GEOAI-Flickr30k-2607-GD/images
+  - img_path: /path/to/0-public/grounding/GEOAI-GQA-2607-GD/images
+  - img_path: /path/to/2-DroneObject/SmartSecurity/GEOAI-Trainset_SmartSecurity-GD/images
+  # - img_path: /path/to/2-DroneObject/SmartCity/GEOAI-Trainset_SmartCity-GD-demo/images

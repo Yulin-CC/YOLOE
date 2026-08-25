@@ -3,7 +3,7 @@
 # 训练中 val 仍用 Public-lvis，本文件供训后 eval.py 域内评测
 # Date：2026-07-31
 
-path: /home/yulin/0-data/2-DroneObject/SmartSecurity/EVAL-TestSet_SmartSecurity
+path: /path/to/2-DroneObject/SmartSecurity/EVAL-TestSet_SmartSecurity
 train: null
 val: test.txt
 nc: 23

@@ -3,7 +3,7 @@
 # Quantity：9677
 # Date：2026-07-31
 
-path: /home/yulin/0-data/2-DroneObject/SmartWaterarea/GEOAI-Trainset_SmartWaterarea-YOLO
+path: /path/to/2-DroneObject/SmartWaterarea/GEOAI-Trainset_SmartWaterarea-YOLO
 train: train-probe-10.txt
 val: null
 nc: 11

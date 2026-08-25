@@ -16,7 +16,7 @@ split_ratio=0.9                   # 训练集比例
 #---------------#
 # 切换到虚拟环境
 #---------------#
-source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
+source /path/to/miniconda3/etc/profile.d/conda.sh
 conda activate yoloe
 
 #---------------#

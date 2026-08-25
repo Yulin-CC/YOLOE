@@ -41,6 +41,7 @@ class DetectionValidator(BaseValidator):
         self.iouv = torch.linspace(0.5, 0.95, 10)  # IoU vector for mAP@0.5:0.95
         self.niou = self.iouv.numel()
         self.lb = []  # for autolabelling
+        self._file_to_img_id = None
         if self.args.save_hybrid:
             LOGGER.warning(
                 "WARNING ⚠️ 'save_hybrid=True' will append ground truth to predictions for autolabelling.\n"
@@ -284,10 +285,46 @@ class DetectionValidator(BaseValidator):
             boxes=predn[:, :6],
         ).save_txt(file, save_conf=save_conf)
 
+    def _lvis_anno_json(self) -> Path | None:
+        """Official LVIS GT path: {data.path}/annotations/lvis_v1_{minival|val}.json."""
+        if not getattr(self, "is_lvis", False) or not getattr(self, "data", None):
+            return None
+        val = self.data.get(self.args.split, "")
+        val = val[0] if isinstance(val, list) else val
+        is_minival = isinstance(val, str) and "minival" in val
+        root = self.data.get("path")
+        if root is None:
+            return None
+        return Path(root) / "annotations" / f"lvis_v1_{'minival' if is_minival else 'val'}.json"
+
+    def _resolve_eval_image_id(self, filename) -> int | str:
+        """LVIS official eval requires int image_id. Numeric stems keep official behavior;
+        GEOAI-style names look up id from annotations JSON by file_name."""
+        stem = Path(filename).stem
+        if stem.isnumeric():
+            return int(stem)
+        if self._file_to_img_id is None:
+            self._file_to_img_id = {}
+            anno = self._lvis_anno_json()
+            if anno is not None and anno.is_file():
+                import json
+                with open(anno, encoding="utf-8") as f:
+                    images = json.load(f).get("images") or []
+                for im in images:
+                    fn = Path(str(im.get("file_name") or "")).name
+                    if fn:
+                        self._file_to_img_id[fn] = int(im["id"])
+                        self._file_to_img_id[Path(fn).stem] = int(im["id"])
+        key = Path(filename).name
+        if key in self._file_to_img_id:
+            return self._file_to_img_id[key]
+        if stem in self._file_to_img_id:
+            return self._file_to_img_id[stem]
+        return stem
+
     def pred_to_json(self, predn, filename):
         """Serialize YOLO predictions to COCO json format."""
-        stem = Path(filename).stem
-        image_id = int(stem) if stem.isnumeric() else stem
+        image_id = self._resolve_eval_image_id(filename)
         box = ops.xyxy2xywh(predn[:, :4])  # xywh
         box[:, :2] -= box[:, 2:] / 2  # xy center to top-left corner
         for p, b in zip(predn.tolist(), box.tolist()):
@@ -334,7 +371,7 @@ class DetectionValidator(BaseValidator):
                     anno = LVIS(str(anno_json))  # init annotations api
                     pred = anno._load_json(str(pred_json))  # init predictions api (must pass string, not Path)
                     val = LVISEval(anno, pred, "bbox")
-                val.params.imgIds = [int(Path(x).stem) for x in self.dataloader.dataset.im_files]  # images to eval
+                val.params.imgIds = [self._resolve_eval_image_id(x) for x in self.dataloader.dataset.im_files]
                 val.evaluate()
                 val.accumulate()
                 val.summarize()
