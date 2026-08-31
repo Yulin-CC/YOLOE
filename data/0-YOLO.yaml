@@ -1,11 +1,8 @@
 #【YOLO datasets】
-# 正式配方：安防 probe-10 再抽 25%（8102），压闭集短词
-# Date：2026-08-24
+# Public recipe: Objects365 train + LVIS val
+# Date：2026-08-31
 
 train:
-  # - data/train-yolo_dataset/Public-Obj365.yaml
-  # - data/train-yolo_dataset/GEOAI-Smartwaterarea.yaml
-  - data/train-yolo_dataset/GEOAI-Smartsecurity.yaml          # probe-10 全量 32406
+  - data/train-yolo_dataset/Public-Obj365.yaml
 val:
-  # - data/val-yolo_dataset/Public-lvis.yaml
-  - data/val-yolo_dataset/GEOAI-ValSet-Smartsecurity.yaml
+  - data/val-yolo_dataset/Public-lvis.yaml
