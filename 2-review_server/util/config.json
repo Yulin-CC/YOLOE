@@ -1,0 +1,56 @@
+{
+  "host": "0.0.0.0",
+  "port": 8088,
+  "device": "cuda:0",
+  "mobileclip": "weights/mobileclip_blt.pt",
+  "predict_config": "config/default_notrain.yaml",
+  "max_request_bytes": 536870912,
+  "max_files_per_task": 50,
+  "infer_timeout_sec": 180,
+  "defaults": {
+    "conf": 0.1,
+    "names": "red car"
+  },
+  "models": [
+    {
+      "id": "official",
+      "name": "YOLOE-11s official",
+      "weights": "weights/yoloe-11s-seg.pt"
+    },
+    {
+      "id": "demo-v0",
+      "name": "YOLOE-demo-260819-v0",
+      "weights": "runs/0-train/YOLOE-demo-260819-v0/weights/best.pt"
+    },
+    {
+      "id": "demo-v1",
+      "name": "YOLOE-demo-260823-v1",
+      "weights": "runs/0-train/YOLOE-demo-260823-v1/weights/best.pt"
+    },
+    {
+      "id": "demo-v2",
+      "name": "YOLOE-demo-260823-v2",
+      "weights": "runs/0-train/YOLOE-demo-260823-v2/weights/best.pt"
+    },
+    {
+      "id": "demo-v3",
+      "name": "YOLOE-demo-260824-v3",
+      "weights": "runs/0-train/YOLOE-demo-260824-v3/weights/best.pt"
+    },
+    {
+      "id": "demo-v4",
+      "name": "YOLOE-demo-260825-v4",
+      "weights": "runs/0-train/YOLOE-demo-260825-v4/weights/best.pt"
+    },
+    {
+      "id": "demo-v5",
+      "name": "YOLOE-demo-260825-v5",
+      "weights": "runs/0-train/YOLOE-demo-260825-v5/weights/best.pt"
+    },
+    {
+      "id": "demo-v6",
+      "name": "YOLOE-demo-260826-v6",
+      "weights": "runs/0-train/YOLOE-demo-260826-v6/weights/best.pt"
+    }
+  ]
+}

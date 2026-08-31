@@ -27,6 +27,9 @@ weights/
 # Agent 工作目录（本机路径 / 实验结果）
 0-Agent-demo/
 
+# 复核服务上传与任务落盘
+2-review_server/data/
+
 # 环境 / 系统
 .env
 .DS_Store

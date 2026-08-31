@@ -7,7 +7,7 @@ YOLOE（Real-Time Seeing Anything）—— 开放集目标检测与分割，支�
 
 ## 更新日志
 - [x] 2026-08-19 1. 开训前将 `data/`、`config/` 快照拷至 `runs/0-train/<project>/`；2. Grounding yaml 只需 `img_path`，固定读取 `train_segm.json` / `train_segm.cache`
-- [x] 2026-07-28 1. 新增 `convert_geoai2coco.py`（GEOAI / Grounding → COCO segm）；2. 推理支持目录批量；3. 完善 LabelMe 拆分（iscrowd / group_id）与 COCO 可视化标签解析；4. 删除旧 `convert_labelme_to_coco_bbox.py`
+- [x] 2026-07-28 1. 新增 `convert_geoai2coco.py`（<team> / Grounding → COCO segm）；2. 推理支持目录批量；3. 完善 LabelMe 拆分（iscrowd / group_id）与 COCO 可视化标签解析；4. 删除旧 `convert_labelme_to_coco_bbox.py`
 - [x] 2026-07-09 修复环境安装文档，补全 `z-others/requirements.txt` / `pyproject.toml` 及根目录软链
 - [x] 2026-07-07 1. 调整项目结构，合并数据预处理脚本为 `data/create_data.py`; 2. 解耦项目的配置文件和数据读取文件
 - [x] 2026-07-02 1. 新增 `1-data-process/` PE 与 Grounding 两套独立数据预处理脚本；2. 新增 `data/yolo/`、`data/grounding/` 训练 yaml 自动生成；3. 开集训练支持 yolo + grounding yaml 合并（scratch 模式）
@@ -153,7 +153,7 @@ yoloe-main/
 - 单数据集结构（标注转换前）
 
   ```markdown
-  ├── path/to/your/dataset          # 数据集路径（前缀 GEOAI-<name>）
+  ├── path/to/your/dataset          # 数据集路径（前缀 <team>-<name>）
   │   ├── images                    # 图像文件 [.jpg/.png]
   │   └── jsons-segment             # LabelMe 分割 json 标注
   ```
@@ -164,7 +164,7 @@ yoloe-main/
   ├── data/0-{project}.yaml           # ⭐训练读取 yaml⭐
   │
   ├── path/to/your/trainvalset        # 训练验证根目录
-  │   └── GEOAI-<name>-<date>-YOLO/   # 前缀 GEOAI（不含 -GD 后缀）
+  │   └── <team>-<name>-<date>-YOLO/   # 前缀 <team>（不含 -GD 后缀）
   │       ├── images                  # 图像文件
   │       ├── jsons-segment           # 原始标注
   │       ├── labels                  # YOLO seg 标签 [.txt]
@@ -256,11 +256,11 @@ yoloe-main/
 
     ```markdown
     ├── path/to/your/trainvalset              # 训练验证根路径
-    │   ├── GEOAI-Objects365v1-2607-YOLO      #【YOLO】Objects365v1 ⭐
-    │   ├── GEOAI-<name>-<date>-YOLO          #【YOLO】self-dataset 
-    │   ├── GEOAI-GQA-2607-GD                 #【Grounding】GQA ⭐
-    │   ├── GEOAI-Flickr30k-2607-GD           #【Grounding】Flickr30k ⭐
-    │   └── GEOAI-<name>-<date>-GD            #【Grounding】self-dataset
+    │   ├── <team>-Objects365v1-2607-YOLO      #【YOLO】Objects365v1 ⭐
+    │   ├── <team>-<name>-<date>-YOLO          #【YOLO】self-dataset 
+    │   ├── <team>-GQA-2607-GD                 #【Grounding】GQA ⭐
+    │   ├── <team>-Flickr30k-2607-GD           #【Grounding】Flickr30k ⭐
+    │   └── <team>-<name>-<date>-GD            #【Grounding】self-dataset
 
     ```
 
@@ -269,20 +269,20 @@ yoloe-main/
   ```markdown
   ├── data
   │
-  ├── path/GEOAI-Objects365v1-2607-YOLO    #【YOLO】训练根目录: 前缀 GEOAI + 后缀 YOLO
+  ├── path/<team>-Objects365v1-2607-YOLO    #【YOLO】训练根目录: 前缀 <team> + 后缀 YOLO
   │   ├── images                           #   图像文件
   │   ├── jsons-segment                    #   标签文件 coco (源数据没有，自己的数据可以按这个格式构建)
   │   └── labels                           #   标签文件 yolo
-  ├── path/GEOAI-<name>-<date>-YOLO        #【YOLO】训练根目录: 新增的自己的数据集
+  ├── path/<team>-<name>-<date>-YOLO        #【YOLO】训练根目录: 新增的自己的数据集
   ├── ...
   ├── ...  
-  ├── GEOAI-GQA-2607-GD                    #【Grounding】训练根目录：前缀 GEOAI + 后缀 GD
+  ├── <team>-GQA-2607-GD                    #【Grounding】训练根目录：前缀 <team> + 后缀 GD
   │   ├── images                           #   图像文件
   │   └── jsons                            #   原始 grounding json
-  ├── GEOAI-Flickr30k-2607-GD              #【Grounding】训练根目录：前缀 GEOAI + 后缀 GD
+  ├── <team>-Flickr30k-2607-GD              #【Grounding】训练根目录：前缀 <team> + 后缀 GD
   │   ├── images                           #   图像文件
   │   └── jsons                            #   原始 grounding json
-  ├── GEOAI-<name>-<date>-GD               #【Grounding】训练根目录：新增的自己的数据集
+  ├── <team>-<name>-<date>-GD               #【Grounding】训练根目录：新增的自己的数据集
   ├── ...
   ├── ...
   │
@@ -306,25 +306,25 @@ yoloe-main/
   │   ├── `0-Grounding.yaml`               # ⭐Grounding 训练读取 yaml⭐
   │   └── `0-YOLO.yaml`                    # ⭐YOLO 训练读取 yaml⭐
   │
-  ├── path/GEOAI-Objects365v1-2607-YOLO    #【YOLO】训练根目录: 前缀 GEOAI + 后缀 YOLO
+  ├── path/<team>-Objects365v1-2607-YOLO    #【YOLO】训练根目录: 前缀 <team> + 后缀 YOLO
   │   ├── images                           #   图像文件
   │   ├── jsons-segment                    #   标签文件 coco
   │   ├── labels                           #   标签文件 yolo
   │   └── `train.txt`                      #   ⭐训练读取文件⭐ 
-  ├── path/GEOAI-<name>-<date>-YOLO        #【YOLO】训练根目录: 新增的自己的数据集
+  ├── path/<team>-<name>-<date>-YOLO        #【YOLO】训练根目录: 新增的自己的数据集
   ├── ...
   ├── ...  
-  ├── path/GEOAI-GQA-2607-GD               #【Grounding】训练根目录：前缀 GEOAI + 后缀 GD
+  ├── path/<team>-GQA-2607-GD               #【Grounding】训练根目录：前缀 <team> + 后缀 GD
   │   ├── images                           #   图像文件
   │   ├── jsons                            #   原始 grounding json
   │   ├── `gqa_segm.json`                  #   ⭐合并 COCO segm json⭐
   │   └── `gqa_segm.cache`                 #   ⭐训练 cache（实际加载）⭐
-  ├── path/GEOAI-Flickr30k-2607-GD         #【Grounding】训练根目录：前缀 GEOAI + 后缀 GD
+  ├── path/<team>-Flickr30k-2607-GD         #【Grounding】训练根目录：前缀 <team> + 后缀 GD
   │   ├── images                           #   图像文件
   │   ├── jsons                            #   原始 grounding json
   │   ├── `gqa_segm.json`                  #   ⭐合并 COCO segm json⭐
   │   └── `gqa_segm.cache`                 #   ⭐训练 cache（实际加载）⭐
-  ├── path/GEOAI-<name>-<date>-GD          #【Grounding】训练根目录：新增的自己的数据集
+  ├── path/<team>-<name>-<date>-GD          #【Grounding】训练根目录：新增的自己的数据集
   ├── ...
   ├── ...
   │
@@ -344,7 +344,7 @@ yoloe-main/
 
 - **训练数据集（YOLO）**
 
-  - 对 `path/GEOAI-<name>-<date>-YOLO` 进行单独处理
+  - 对 `path/<team>-<name>-<date>-YOLO` 进行单独处理
 
     ```bash
     cd 1-data-process
@@ -360,7 +360,7 @@ yoloe-main/
   - 最终生成格式
 
     ```markdown
-    ├── path/GEOAI-<name>-YOLO    #【YOLO】训练根目录: 前缀 GEOAI + 后缀 YOLO
+    ├── path/<team>-<name>-YOLO    #【YOLO】训练根目录: 前缀 <team> + 后缀 YOLO
     │   ├── images                #   图像文件
     │   ├── jsons-segment         #   标签文件 coco
     │   ├── labels                #   ⭐标签文件 yolo⭐
@@ -369,7 +369,7 @@ yoloe-main/
 
 - **训练数据集（Grounding）**
 
-  - 对 `path/GEOAI-<name>-<date>-GD` 进行单独处理
+  - 对 `path/<team>-<name>-<date>-GD` 进行单独处理
 
     ```bash
     cd 1-data-process
@@ -382,7 +382,7 @@ yoloe-main/
   - 最终生成格式
 
     ```markdown
-    ├── path/GEOAI-<name>-GD      #【Groungding】训练根目录: 前缀 GEOAI + 后缀 GD
+    ├── path/<team>-<name>-GD      #【Groungding】训练根目录: 前缀 <team> + 后缀 GD
     │   ├── images                #   图像文件
     │   ├── jsons-segment         #   标签文件 coco
     │   ├── `gqa_segm.json`       #   ⭐合并 COCO segm json⭐
@@ -399,7 +399,7 @@ yoloe-main/
 
   - 处理完所有数据集后，进行汇总读取，再次确认数据格式
 
-    - `GEOAI` 前缀为训练数据，`EVAL` 前缀为验证数据
+    - `<team>` 前缀为训练数据，`EVAL` 前缀为验证数据
 
     - `YOLO` 后缀为 YOLO 格式标签数据，`GD` 后缀为 Grounding 格式标签数据
 
@@ -456,7 +456,7 @@ yoloe-main/
 | 入口 | `0-train_pe.sh` | `0-train_open.sh` |
 | 训练配置 | `config/train_pe.yaml` | `config/train_open.yaml` |
 | 推理 / 评估配置 | `config/default_notrain.yaml` | `config/default_notrain.yaml` |
-| 数据目录 | `GEOAI-<name>/` 或 `GEOAI-<name>-YOLO/` | YOLO：`GEOAI-<name>-YOLO/`；Grounding：`GEOAI-<name>-GD/` |
+| 数据目录 | `<team>-<name>/` 或 `<team>-<name>-YOLO/` | YOLO：`<team>-<name>-YOLO/`；Grounding：`<team>-<name>-GD/` |
 | 预处理 | `2-create_yolodata.sh` | YOLO：`2-create_yolodata.sh`；Grounding：`2-create_grounding.sh` |
 | yaml 汇总 | 单数据集 yaml（如 `data/yolo/0-Person.yaml`） | `data/create_data.py` → `0-YOLO.yaml` + `0-Grounding.yaml` |
 | 词汇表 | 不需要 | `3-create_vocab_pt.sh`（训练前离线生成 `.pt`） |

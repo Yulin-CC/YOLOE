@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YOLOE 复核推理</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>YOLOE 复核推理</h1>
+      <p class="sub" id="server-meta">加载配置中…</p>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel form-panel">
+      <h2>提交任务</h2>
+      <label>模型
+        <select id="model"></select>
+      </label>
+      <label>开集提示词
+        <textarea id="names" rows="4" placeholder="单个：red car&#10;多个：white car, red car, black car"></textarea>
+      </label>
+      <p class="hint">逗号、分号、顿号都可以分隔。提交后会显示实际解析出的词；换词会重新加载，不沿用上一轮。</p>
+      <label>置信度 conf
+        <input id="conf" type="number" min="0.01" max="1" step="0.05" />
+      </label>
+      <div class="file-row">
+        <label class="btn">选择图片
+          <input id="files" type="file" accept="image/*" multiple hidden />
+        </label>
+        <label class="btn ghost">选择文件夹
+          <input id="folder" type="file" webkitdirectory multiple hidden />
+        </label>
+      </div>
+      <p class="hint" id="file-hint">未选择文件</p>
+      <button id="submit" type="button">开始推理</button>
+      <p class="hint" id="form-msg"></p>
+    </section>
+
+    <section class="panel viewer-panel">
+      <div class="toolbar">
+        <button id="prev" type="button">上一张</button>
+        <button id="next" type="button">下一张</button>
+        <button id="reset-view" type="button">复位</button>
+        <span class="sep" aria-hidden="true"></span>
+        <label class="chk"><input id="show-box" type="checkbox" checked /> 框</label>
+        <label class="chk"><input id="show-mask" type="checkbox" checked /> 掩膜</label>
+        <label class="chk"><input id="show-label" type="checkbox" checked /> label</label>
+        <label class="chk"><input id="show-conf" type="checkbox" checked /> conf</label>
+        <span id="item-meta" class="hint">尚未加载任务</span>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="view"></canvas>
+        <p class="empty" id="empty">上传图片后，检测框与掩膜会叠在原图上。滚轮缩放，拖拽平移。</p>
+      </div>
+      <pre class="error" id="item-error" hidden></pre>
+    </section>
+
+    <div class="v-resizer" id="res-side" title="拖动调整右侧宽度"></div>
+
+    <section class="panel hist-panel">
+      <h2>模型</h2>
+      <p class="hint">一个模型一张卡片。点描述词显示/隐藏该类目标。</p>
+      <div id="model-chips"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

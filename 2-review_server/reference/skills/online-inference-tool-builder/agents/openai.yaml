@@ -1,0 +1,4 @@
+interface:
+  display_name: "在线推理工具开发"
+  short_description: "参照成熟模式设计并实现轻量、可恢复、可验证的在线推理工具"
+  default_prompt: "使用 $online-inference-tool-builder 根据我的算法接口开发一个在线推理工具。"
