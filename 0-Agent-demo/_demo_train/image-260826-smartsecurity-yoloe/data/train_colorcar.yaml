@@ -1,0 +1,122 @@
+# YOLOE 颜色车试跑（只给 _demo_train 用，不改 config/train_open.yaml）
+# 相对 v0.2.3 的改动见文件头；源码不动
+# =============================================================================
+# 思路
+# =============================================================================
+# v0.2.3：YOLO 闭集 63% + lr=1e-3 + cls=0.5 + 强饱和度抖动
+#   → 问 car 0.9，问 white car 最高 0.18，推理 0.25 全空
+# 本试跑只动三件事：
+#   1. YOLO 砍到 probe-10 的 25%（~8k vs GD 1.87 万，约 30/70）
+#   2. cls 0.5→1.5，逼模型把分给短语；lr 1e-3→4e-4，少冲官方开集
+#   3. hsv_s 0.7→0.2，别把白车随机染成别的颜色
+# =============================================================================
+
+
+# ========== 训练参数 ==========
+train:
+
+  defaults:
+
+    # ── 基础配置 ──
+    task:     "segment"
+    mode:     "scratch"
+    model:    "weights/yoloe-11s-seg.pt"
+    data:     "0-YOLO.yaml"                 # 相对本票 data/；0-train.sh --data 会覆盖
+    grounding_data: "0-Grounding.yaml"
+    vocab_json: "config/vocab/train_label_embeddings.json"
+    neg_vocab:  "config/vocab/global_grounding_neg_cat.json"
+    val_data:   "GEOAI-ValSet-Smartsecurity.yaml"
+    project:    "YOLOE-demo-260823-v1"   # util/0-train.sh 的 --project 会覆盖
+    name:       null
+    device:     "0"
+    workers:    4
+    seed:       0
+    deterministic: true
+    verbose:    true
+    cfg:        null
+
+    # ── 训练循环 ──
+    epochs:       16
+    time:         null
+    batch:        128
+    imgsz:        640
+    amp:          true
+    patience:     8
+    save:         true
+    save_period:  -1
+    cache:        false
+    resume:       false
+    pretrained:   true
+    exist_ok:     true
+    close_mosaic: 2
+    val_interval: 2
+    fraction:     1.0
+    profile:      false
+    freeze:       null
+    multi_scale:  false
+    single_cls:   false
+    rect:         false
+    cos_lr:       false
+
+    # ── 验证/测试（训练期间）──
+    val:          true
+    split:        "val"
+    save_json:    false
+    save_hybrid:  false
+    conf:         null
+    iou:          0.7
+    max_det:      300
+    half:         false
+    dnn:          false
+    plots:        true
+
+    # ── 优化器（相对 v0.2.3：lr 砍到 4e-4）──
+    optimizer:       "AdamW"
+    lr0:             0.0004
+    lrf:             0.01
+    momentum:        0.9
+    weight_decay:    0.025
+    warmup_epochs:   1.0
+    warmup_bias_lr:  0.0
+    warmup_momentum: 0.8
+    nbs:             64
+
+    # ── 损失函数（相对 v0.2.3：cls 0.5 → 1.5，box/dfl 不动）──
+    box:  7.5
+    cls:  1.5
+    dfl:  1.5
+    pose: 12.0
+    kobj: 1.0
+
+    # ── 分割任务 ──
+    overlap_mask: false
+    mask_ratio:   4
+
+    # ── 分类任务 ──
+    dropout: 0.0
+
+    # ── 数据增强（相对 v0.2.3：减弱颜色抖动）──
+    hsv_h:            0.005
+    hsv_s:            0.2
+    hsv_v:            0.3
+    degrees:          0.0
+    translate:        0.1
+    scale:            0.5
+    shear:            0.0
+    perspective:      0.0
+    flipud:           0.0
+    fliplr:           0.5
+    bgr:              0.0
+    mosaic:           1.0
+    mixup:            0.0
+    copy_paste:       0.0
+    copy_paste_mode:  "flip"
+    auto_augment:     "randaugment"
+    erasing:          0.4
+    crop_fraction:    1.0
+
+    # ── YOLOE 开集专用 ──
+    text_model:    "mobileclip:blt"
+    load_vp:       false
+    train_pe_path: null
+    is_lvis:       true

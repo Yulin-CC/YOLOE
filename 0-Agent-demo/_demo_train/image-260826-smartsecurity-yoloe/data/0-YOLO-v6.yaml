@@ -1,0 +1,9 @@
+#【YOLO datasets · v6】
+# 安防 100%（324065）。GD / 超参与 v3 相同，只换 YOLO 全量。
+# Date：2026-08-26
+# 子 yaml 写同目录文件名即可，复制票目录不用改路径
+
+train:
+  - GEOAI-TrainSet-Smartsecurity-p100.yaml
+val:
+  - GEOAI-ValSet-Smartsecurity.yaml

@@ -1,0 +1,10 @@
+#【Grounding】
+# 增减数据源就改下面列表，不要另起 0-Grounding-vN.yaml。
+# 当前：Flickr + GQA + 安防自采 GD（与 Customer v2 / v3 / v6 一致）
+# Date：2026-08-24
+
+train:
+  grounding_data:
+  - img_path: "/home/yulin/0-data/0-public/grounding/GEOAI-((Flickr30k))-Public-2607-(GD)/images"
+  - img_path: "/home/yulin/0-data/0-public/grounding/GEOAI-((GQA))-Public-2607-(GD)/images"
+  - img_path: "/home/yulin/0-data/2-DroneObject/SmartSecurity/GEOAI-((YOLOE_SmartSecurity-gd01))-Selfcollect-2608-(GD)/images"
