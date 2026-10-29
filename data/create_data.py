@@ -1,7 +1,8 @@
 """
 # @Author: 算法组 蔡雨霖
 # @Date: 2026-07-07
-# @Description: 扫描数据根目录下 GEOAI-* 子文件夹，按后缀分别生成 grounding / yolo 训练 yaml
+# @Description: 扫描 GEOAI-((Name))-* 子文件夹，按后缀生成 grounding / yolo 训练 yaml
+#   (GD) 训练 grounding；(YOLO) 训练 YOLO；(YOLO)(VAL) 验证集，不进本脚本
 # @Command: cd data && python create_data.py
 """
 import json
@@ -15,18 +16,31 @@ JSONS_SEGMENT_DIR = "jsons-segment"
 
 
 #----------------------------#
-# 数据集目录识别：前缀 GEOAI，后缀 GD / YOLO
+# 统一命名：GEOAI-((Name))-(Public|Selfcollect)-YYMM-(GD|YOLO)
+# 验证集：同一前缀 + (YOLO)(VAL)，由 1-data-process/3-create_valset.sh 生成
 #----------------------------#
+def dataset_kind(name: str) -> str | None:
+    if not name.startswith("GEOAI-(("):
+        return None
+    if name.endswith("(YOLO)(VAL)"):
+        return "VAL"
+    if name.endswith("(GD)"):
+        return "GD"
+    if name.endswith("(YOLO)"):
+        return "YOLO"
+    return None
+
+
 def is_grounding_dir(name: str) -> bool:
-    return name.startswith("GEOAI") and name.endswith("GD")
+    return dataset_kind(name) == "GD"
 
 
 def is_yolo_dir(name: str) -> bool:
-    return name.startswith("GEOAI") and name.endswith("YOLO")
+    return dataset_kind(name) == "YOLO"
 
 
 #----------------------------#
-# 单个 GEOAI-*-GD 目录 → grounding_data 条目
+# 单个 GEOAI-((Name))-*-(GD) 目录 → grounding_data 条目
 # json/cache 固定为 train_segm.json / train_segm.cache
 #----------------------------#
 def collect_grounding_entries(root: Path, dir_name: str) -> list[dict]:
@@ -67,7 +81,7 @@ def build_grounding_yaml(paths: list[str], out_path: Path) -> int:
                 used_dirs.append(dir_name)
 
     if not grounding_data:
-        print("⚠️  未找到 GEOAI-*-GD 数据集，跳过 0-Grounding.yaml")
+        print("⚠️  未找到 GEOAI-((Name))-*-(GD) 数据集，跳过 0-Grounding.yaml")
         return 0
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -141,7 +155,7 @@ def discover_categories_from_jsons_segment(dataset_dir: Path, dir_name: str) -> 
 
 
 #----------------------------#
-# 单个 GEOAI-*-YOLO 目录 → yolo 条目
+# 单个 GEOAI-((Name))-*-(YOLO) 目录 → yolo 条目
 #----------------------------#
 def collect_yolo_entry(root: Path, dir_name: str) -> dict | None:
     dataset_dir = (root / dir_name).resolve()
@@ -199,7 +213,7 @@ def build_yolo_yaml(paths: list[str], out_path: Path) -> int:
                 yolo_entries.append(entry)
 
     if not yolo_entries:
-        print("⚠️  未找到符合标准的 GEOAI-*-YOLO 数据集，跳过 0-YOLO.yaml")
+        print("⚠️  未找到符合标准的 GEOAI-((Name))-*-(YOLO) 数据集，跳过 0-YOLO.yaml")
         print(f"    标准结构：images/ + train.txt + {JSONS_SEGMENT_DIR}/*.json（含 shapes[].label）")
         return 0
 
@@ -242,12 +256,12 @@ def build_yolo_yaml(paths: list[str], out_path: Path) -> int:
 #----------------------------#
 def main(paths: list[str], data_dir: Path):
     print("════════════════════════════════════════")
-    print(" 扫描 GEOAI-*-GD → 0-Grounding.yaml")
+    print(" 扫描 GEOAI-((Name))-*-(GD) → 0-Grounding.yaml")
     print("════════════════════════════════════════")
     build_grounding_yaml(paths, data_dir / "0-Grounding.yaml")
 
     print("\n════════════════════════════════════════")
-    print(" 扫描 GEOAI-*-YOLO → 0-YOLO.yaml")
+    print(" 扫描 GEOAI-((Name))-*-(YOLO) → 0-YOLO.yaml")
     print("════════════════════════════════════════")
     build_yolo_yaml(paths, data_dir / "0-YOLO.yaml")
 
@@ -256,9 +270,8 @@ if __name__ == "__main__":
 
 # 修改 ------------------------------------------------------------------------------------------------------------------#
     path = [
-        "/path/to/0-public/反光衣",
-        "/path/to/0-public/自行车",
-
+        "/path/to/0-public/grounding",
+        "/path/to/2-DroneObject/SmartSecurity",
     ]
 #------------------------------------------------------------------------------------------------------------------------#
 

@@ -2,7 +2,7 @@
 # @Author: 算法组
 # @Date: 2026-07-02
 # @Description: 将 COCO grounding segm json 按图像拆分为 jsons/*.json，与 images/ 一一对应。
-# @Command: python 1-data-process/util/split_grounding.py --input /path/to/flickr_train_segm.json --output /path/to/jsons
+# @Command: python 1-data-process/util/split_grounding.py --input /path/to/train_segm.json --output /path/to/jsons
 """
 import argparse
 import json

@@ -16,7 +16,7 @@
 # v0.2.3：YOLO 闭集偏多 + lr=1e-3 + cls=0.5 + 强饱和度 → 问 car 很高，问 white car 0.25 全空
 # v0.3.0（demo v2 转正）：Flickr+GQA+安防 GD + YOLO probe-10×25%
 #   lr0 1e-3→4e-4，cls 0.5→1.5，hsv_s 0.7→0.2 / hsv_h 0.015→0.005
-# 换数据后先跑 1-data-process/3-create_vocab_pt.sh，再开训（否则 Flickr 短语 KeyError）
+# 换数据后先跑 1-data-process/4-create_vocab_pt.sh，再开训（否则 Flickr 短语 KeyError）
 # =============================================================================
 
 

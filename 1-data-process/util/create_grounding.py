@@ -4,7 +4,7 @@
 # @Description: 将 grounding 源数据（images/ + jsons/*.json）合并为 COCO segm json。
 #   支持每个 json 含多条 caption（images 多条）；合并时重排全局 image_id / annotation id。
 #   file_name 统一为 images/ 下的 basename，供 generate_grounding_cache 使用：img_path / file_name
-# @Command: bash 1-data-process/5-create_grounding.sh
+# @Command: bash 1-data-process/2-create_grounding.sh
 """
 import argparse
 import json
@@ -21,9 +21,9 @@ def parse_args():
     parser.add_argument("--input",  type=str, default="testdir/qga",
                         help="数据集根目录（含 images/ 与 jsons/）")
     parser.add_argument("--project", type=str, default="gqa",
-                        help="输出文件前缀，默认 {input}/{project}_segm.json")
+                        help="兼容旧调用；未指定 --output 时不再使用此前缀")
     parser.add_argument("--output", type=str, default="",
-                        help="输出 segm json 路径（默认 {input}/{project}_segm.json）")
+                        help="输出 segm json 路径（默认 {input}/train_segm.json）")
     parser.add_argument("--images-dir", type=str, default="images",
                         help="图片子目录名")
     parser.add_argument("--jsons-dir",  type=str, default="jsons",
@@ -159,7 +159,7 @@ def build_grounding_segm(
 if __name__ == "__main__":
     args = parse_args()
     root = Path(args.input).resolve()
-    out  = Path(args.output).resolve() if args.output else root / f"{args.project}_segm.json"
+    out  = Path(args.output).resolve() if args.output else root / "train_segm.json"
 
     print(f"Input  : {root}")
     print(f"Output : {out}")

@@ -1,8 +1,11 @@
 #【YOLO datasets】
 # Public recipe: Objects365 train + LVIS val
+# 安防配方（demo / 旧正式线）：probe-10 × 25% + ValSet-Smartsecurity，见 0-Agent-demo
 # Date：2026-08-31
 
 train:
-  - data/train-yolo_dataset/Public-Obj365.yaml
+  # - data/train-yolo_dataset/Public-Obj365.yaml
+  - data/train-yolo_dataset/Selfcollect-smartsecurity.yaml       
 val:
-  - data/val-yolo_dataset/Public-lvis.yaml
+  # - data/val-dataset/Public-lvis-val.yaml
+  - data/val-dataset/Selfcollect-smartsecurity-val.yaml

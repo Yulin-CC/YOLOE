@@ -48,6 +48,6 @@ python 0-QuickStart/scripts/eval.py \
 
 
 # 数据集验证数据读取路径：
-# lvis 验证数据读取路径：/path/to/EVAL-LVIS/annotations/lvis_v1_minival.json
-# coco 验证数据读取路径: /path/to/EVAL-COCO2017/annotations/instances_val2017.json
-# geoai 验证数据读取路径：config eval.datasets.geoai.yaml（默认 data/val-yolo_dataset/GEOAI-Smartsecurity.yaml）
+# lvis 验证数据读取路径：.../GEOAI-((LVIS))-Public-2607-(YOLO)(VAL)/annotations/lvis_v1_minival.json
+# coco 验证数据读取路径: .../GEOAI-((COCO2017))-Public-2607-(YOLO)/annotations/instances_val2017.json
+# geoai 验证数据读取路径：config eval.datasets.geoai.yaml（默认 data/val-yolo_dataset/GEOAI-ValSet-Smartsecurity.yaml）

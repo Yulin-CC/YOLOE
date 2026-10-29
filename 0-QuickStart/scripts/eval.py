@@ -680,13 +680,13 @@ def eval_geoai(weights, cfg, split, batch, device, save_dir):
     """
     自定义无人机场景开集验证。
 
-    与 lvis/coco 的区别：使用用户自己的数据集 yaml（如 GEOAI-Smartsecurity.yaml），
+    与 lvis/coco 的区别：使用用户自己的数据集 yaml（如 GEOAI-ValSet-Smartsecurity.yaml），
     显式用 yaml 的 names 设置文本词表，输出标准 Box mAP + Mask mAP，无需 LVIS/COCO json。
 
     注意：必须显式 set_classes，否则 validator 会使用权重里固化的 names
     （如自训模型可能固化了 LVIS 1203 类），导致类别词表错误。
     """
-    data_yaml = resolve_path(cfg.get("data", "data/val-yolo_dataset/GEOAI-Smartsecurity.yaml"))
+    data_yaml = resolve_path(cfg.get("data", "data/val-yolo_dataset/GEOAI-ValSet-Smartsecurity.yaml"))
     model = YOLOE(resolve_path(weights))
 
     # 用数据集 yaml 的 names 作为文本词表，覆盖权重固化的默认词表
@@ -746,7 +746,7 @@ def _resolve_mode_data(cfg: dict, mode: str, cli_data: str | None, cli_split: st
 
     defaults = {"lvis": ("data/val-yolo_dataset/Public-lvis.yaml", "minival"),
                 "coco": ("data/val-yolo_dataset/Public-coco.yaml", "val"),
-                "geoai": ("data/val-yolo_dataset/GEOAI-Smartsecurity.yaml", "val")}
+                "geoai": ("data/val-yolo_dataset/GEOAI-ValSet-Smartsecurity.yaml", "val")}
     d_data, d_split = defaults.get(mode, ("", ""))
     data = data or d_data
     split = split or d_split

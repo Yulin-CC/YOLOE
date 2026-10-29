@@ -2,7 +2,7 @@
 # @Author: 算法组 蔡雨霖
 # @Date: 2026-06-16
 # @Description: YOLOE 开集训练封装：
-#   词汇表 .pt 由 1-data-process/3-create_vocab_pt.sh 离线生成
+#   词汇表 .pt 由 1-data-process/4-create_vocab_pt.sh 离线生成
 #   Step 1 开集训练（与 train_pe.py 共用 linear/full/visual/scratch 分发）
 #   开训前备份 data/ + config/ 至 runs/0-train/{project}/{data,config}/
 # @Command: bash 0-QuickStart/0-train_open.sh
@@ -37,9 +37,15 @@ from train_pe import (
 #----------------------------#
 # 路径解析
 #----------------------------#
-def _resolve_path(path: str) -> Path:
+def _resolve_path(path: str, base: Path | None = None) -> Path:
     p = Path(path)
-    return p.resolve() if p.is_absolute() else (ROOT / p).resolve()
+    if p.is_absolute():
+        return p.resolve()
+    if base is not None:
+        cand = (base / p).resolve()
+        if cand.exists():
+            return cand
+    return (ROOT / p).resolve()
 
 
 #----------------------------#
@@ -76,9 +82,10 @@ def _expand_yolo_index(yolo_yaml: str) -> tuple[list[str], list[str]]:
 
     train_refs = _as_yaml_list(train)
     if train_refs is not None:
-        train_yamls = [str(_resolve_path(p)) for p in train_refs]
+        index_dir = index_path.parent
+        train_yamls = [str(_resolve_path(p, index_dir)) for p in train_refs]
         val_refs = _as_yaml_list(cfg.get("val")) or []
-        val_yamls = [str(_resolve_path(p)) for p in val_refs]
+        val_yamls = [str(_resolve_path(p, index_dir)) for p in val_refs]
         for p in train_yamls + val_yamls:
             if not Path(p).is_file():
                 raise FileNotFoundError(f"索引中的数据集 yaml 不存在: {p}")

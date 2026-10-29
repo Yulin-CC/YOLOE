@@ -2265,7 +2265,7 @@ class RandomLoadText:
             if (candidate / "train_label_embeddings.pt").is_file():
                 return candidate
         raise FileNotFoundError(
-            f"未找到 train_label_embeddings.pt。请先运行 bash 1-data-process/3-create_vocab_pt.sh，"
+            f"未找到 train_label_embeddings.pt。请先运行 bash 1-data-process/4-create_vocab_pt.sh，"
             f"或检查 config/{text_model}/ 与 tools/{text_model}/。"
         )
 
@@ -2286,7 +2286,7 @@ class RandomLoadText:
             if candidate.is_file():
                 return candidate
         raise FileNotFoundError(
-            "未找到负词汇表 JSON。请先运行 bash 1-data-process/3-create_vocab_pt.sh，"
+            "未找到负词汇表 JSON。请先运行 bash 1-data-process/4-create_vocab_pt.sh，"
             "或将路径导出为 YOLOE_NEG_VOCAB。"
         )
     def __call__(self, labels: dict) -> dict:

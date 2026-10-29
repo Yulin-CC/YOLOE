@@ -131,8 +131,8 @@ def grounding_caches_from_yaml(grounding_yaml: Path) -> list[Path]:
         if not cache_path.is_file():
             raise FileNotFoundError(
                 f"未找到 grounding cache: {cache_path}\n"
-                f"请先运行: bash 1-data-process/2-create_grounding.sh "
-                f"--json-path {resolved['json_file']} --img-path {resolved['img_path']}"
+                f"请先运行: bash 1-data-process/2-create_grounding.sh"
+                f"（数据集根目录应含 images/ 与 jsons/，会生成 {cache_path}）"
             )
         caches.append(cache_path)
     return caches

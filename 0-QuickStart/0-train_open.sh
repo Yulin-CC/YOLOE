@@ -5,7 +5,7 @@
  # @LastEditTime: 2026-08-24
  # @Description: YOLOE 开集训练入口，由 train_open.py 统一完成：
  #   正式配方：Flickr+GQA+安防 GD + 安防 YOLO probe-10×25%
- #   词汇表 .pt 请先运行 1-data-process/3-create_vocab_pt.sh 离线生成
+ #   词汇表 .pt 请先运行 1-data-process/4-create_vocab_pt.sh 离线生成
  #   Step 1 开集训练（linear/full/visual/scratch，超参从 config/train_open.yaml 读取）
  #   开训前备份 data/ + config/ 至 runs/0-train/$project/{data,config}/
 ###
