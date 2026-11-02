@@ -1,0 +1,28 @@
+{
+  "services": [
+    {
+      "id": "0",
+      "name": "Qwen3.6-35B-A3B",
+      "base_url": "http://<ip>:8081/v1",
+      "port": 8081,
+      "model": "qwen3.6-35b-a3b",
+      "default": false
+    },
+    {
+      "id": "1",
+      "name": "Qwen3.8-27B",
+      "base_url": "http://<ip>:8081/v1",
+      "port": 8081,
+      "model": "qwen3.8-27b",
+      "default": true
+    },
+    {
+      "id": "2",
+      "name": "Qwen3.8-27B-FP8",
+      "base_url": "http://<ip>:4004/v1",
+      "port": 4004,
+      "model": "/Qwen3.8-27B-FP8",
+      "default": false
+    }
+  ]
+}

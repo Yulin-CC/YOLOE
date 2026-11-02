@@ -2,7 +2,7 @@
 # @Author: 算法组 蔡雨霖
 # @Date: 2026-08-26
 # @Description: YOLOE 复核推理服务入口（静态页 + JSON API + 后台推理队列）
-# @Command: python 2-review_server/util/server.py --port 8088 --device cuda:0
+# @Command: python 3-review_server/util/server.py --port 8088 --device cuda:0
 """
 from __future__ import annotations
 

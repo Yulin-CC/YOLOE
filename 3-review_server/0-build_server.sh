@@ -4,7 +4,7 @@
  # @Date: 2026-08-26
  # @LastEditTime: 2026-08-26
  # @Description: 启动 YOLOE 复核推理页（浏览器上传图片 + 文本提示词）。可信内网使用，无登录。
- # @Command: bash 2-review_server/0-build_server.sh
+ # @Command: bash 3-review_server/0-build_server.sh
 ###
 SERVER_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT="$(cd "$SERVER_DIR/.." && pwd)"

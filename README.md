@@ -93,6 +93,7 @@ yoloe-main/
 │   ├── _demo_eval/
 │   └── _demo_infer/
 ├── 1-data-process/            # 数据预处理
+├── 3-review_server/           # 浏览器复核推理页（上传图片 + 文本提示词）
 ├── config/                    # 训练 / 推理 yaml
 ├── data/                      # 数据集索引 yaml
 ├── ultralytics/               # 上游核心代码

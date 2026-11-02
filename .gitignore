@@ -28,7 +28,7 @@ weights/
 0-Agent-demo/
 
 # 复核服务上传与任务落盘
-2-review_server/data/
+3-review_server/data/
 
 # 环境 / 系统
 .env

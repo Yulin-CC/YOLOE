@@ -1,0 +1,28 @@
+{
+  "scenes": [
+    {
+      "id": "",
+      "label": "通用 (default)",
+      "max_phrases": 8,
+      "ban_vehicle_subtypes": false,
+      "exhaustive": false,
+      "caption_cover_all": false
+    },
+    {
+      "id": "appearance",
+      "label": "appearance（只写外观）",
+      "max_phrases": 3,
+      "ban_vehicle_subtypes": true,
+      "exhaustive": true,
+      "caption_cover_all": true
+    },
+    {
+      "id": "flickr",
+      "label": "flickr（短名词短语）",
+      "max_phrases": 3,
+      "ban_vehicle_subtypes": false,
+      "exhaustive": false,
+      "caption_cover_all": false
+    }
+  ]
+}
