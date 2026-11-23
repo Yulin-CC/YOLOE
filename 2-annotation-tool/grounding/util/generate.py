@@ -22,7 +22,7 @@ def parse_args():
     p.add_argument("--force", action="store_true")
     p.add_argument("--no_llm", action="store_true", help="描述/caption 跳过模型（调试）")
     p.add_argument("--export", action="store_true", help="生成后导出 jsons-GD")
-    p.add_argument("--workers", type=int, default=4, help="describe / exhaustive 并发")
+    p.add_argument("--workers", type=int, default=4, help="describe / exhaustive / caption 并发")
     p.add_argument("--timeout", type=int, default=600, help="vLLM HTTP 超时秒数")
     p.add_argument(
         "--stages", default="all",
@@ -495,6 +495,7 @@ def run_generate(
             n_captions=n_captions, limit=limit,
             force=force, no_llm=no_llm, timeout=timeout,
             progress_cb=lambda d, t, det="": _prog("caption", d, t, det),
+            workers=workers,
         )
         ran.append("caption")
 

@@ -23,6 +23,22 @@
       "ban_vehicle_subtypes": false,
       "exhaustive": false,
       "caption_cover_all": false
+    },
+    {
+      "id": "flickr_opt",
+      "label": "flickr_opt（原 aerial 改名）",
+      "max_phrases": 3,
+      "ban_vehicle_subtypes": true,
+      "exhaustive": false,
+      "caption_cover_all": false
+    },
+    {
+      "id": "gqa",
+      "label": "gqa（航拍开集，仿 GQA 无冠词）",
+      "max_phrases": 3,
+      "ban_vehicle_subtypes": true,
+      "exhaustive": false,
+      "caption_cover_all": false
     }
   ]
 }

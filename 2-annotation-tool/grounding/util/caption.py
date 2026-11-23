@@ -11,6 +11,7 @@ import math
 import os
 import random
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -908,7 +909,8 @@ def captions_need_rebuild(dataset_root, stem) -> bool:
 
 
 def caption_dataset(dataset_root, base_url, model, n_captions=5, limit=None,
-                    force=False, no_llm=False, timeout=600, progress_cb=None):
+                    force=False, no_llm=False, timeout=600, progress_cb=None,
+                    workers=4):
     """
     progress_cb: optional callable(done, total, detail) 用于 UI 实时百分比。
     """
@@ -921,20 +923,47 @@ def caption_dataset(dataset_root, base_url, model, n_captions=5, limit=None,
     )
     ensure_dir(os.path.join(draft_dir(dataset_root), "captions"))
     n_rebuild = 0
+    n_fail = 0
     total = len(stems)
+    n_workers = 1 if no_llm else max(1, int(workers or 1))
+    print(f"待 caption: {total} 图（workers={n_workers}）")
     if progress_cb:
         progress_cb(0, max(total, 1), f"0/{total}")
-    for i, stem in enumerate(tqdm(stems, desc="caption"), start=1):
+
+    def _one(stem):
         do_force = force or (not no_llm and captions_need_rebuild(dataset_root, stem))
-        if do_force and not force:
-            n_rebuild += 1
         caption_one_image(
             dataset_root, stem, client=client,
             n_captions=n_captions, force=do_force,
         )
-        if progress_cb:
-            progress_cb(i, total, f"{i}/{total}")
-    print(f"caption 完成: {len(stems)} 图" + (f"（自动重建 {n_rebuild}）" if n_rebuild else ""))
+        return bool(do_force and not force)
+
+    if n_workers == 1 or total <= 1:
+        for i, stem in enumerate(tqdm(stems, desc="caption"), start=1):
+            if _one(stem):
+                n_rebuild += 1
+            if progress_cb:
+                progress_cb(i, total, f"{i}/{total}")
+    else:
+        done = 0
+        with ThreadPoolExecutor(max_workers=n_workers) as pool:
+            futs = [pool.submit(_one, stem) for stem in stems]
+            for fut in tqdm(as_completed(futs), total=len(futs), desc="caption"):
+                try:
+                    if fut.result():
+                        n_rebuild += 1
+                except Exception as e:
+                    n_fail += 1
+                    print(f"  ⚠ caption: {e}")
+                done += 1
+                if progress_cb:
+                    progress_cb(done, total, f"{done}/{total}")
+    extra = []
+    if n_rebuild:
+        extra.append(f"自动重建 {n_rebuild}")
+    if n_fail:
+        extra.append(f"失败 {n_fail}")
+    print(f"caption 完成: {len(stems)} 图" + (f"（{'，'.join(extra)}）" if extra else ""))
     if progress_cb and total:
         progress_cb(total, total, f"{total}/{total}")
 
@@ -948,6 +977,7 @@ def parse_args():
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--force", action="store_true")
     p.add_argument("--no_llm", action="store_true", help="仅用模板拼句（调试）")
+    p.add_argument("--workers", type=int, default=4, help="图级并发")
     p.add_argument(
         "--rules-scene",
         default=os.environ.get("RULES_SCENE", ""),
@@ -963,4 +993,5 @@ if __name__ == "__main__":
         args.dataset, args.base_url, args.model,
         n_captions=args.n_captions, limit=args.limit,
         force=args.force, no_llm=args.no_llm,
+        workers=args.workers,
     )

@@ -22,8 +22,8 @@ expand_ratio=1.5
 #--------------------------------------#
 workers=4
 #--------------------------------------#
-# 空=通用 default；appearance=只写外观
-rules_scene="appearance"
+# 空=通用 default；appearance=只写外观；flickr_opt=现用（原 aerial）；flickr=短名词短语。先不用 aerial
+rules_scene="flickr_opt"
 #--------------------------------------#
 
 # vLLM 默认读 model/server.json 中 default=true

@@ -10,7 +10,7 @@ description: >-
 # 🚀 Agent-Auto Generate（批量描述 + Caption）
 
   - **概述**: 用户要「批量生成描述 / caption」「跑 generate」「续跑 draft」时触发。先确认数据集、模型服务、规则场景，再调用 `grounding` 生成；产物只进 `draft/`。
-  - **日期**: 2026-08-21
+  - **日期**: 2026-11-11
 
 ---
 
@@ -93,7 +93,7 @@ description: >-
     3. 模型服务：[用 server.json 的 default | 指定 base_url=________ model=________]
     4. 规模：[先 --limit 1 打通，再全量 | 直接全量]
     5. 续跑：[不 --force（默认，跳过已有非占位） | 强制重跑 --force]
-    6. workers：[4]
+    6. workers：[4]（describe 与 caption 共用；默认 4，勿省略）
     7. timeout 秒：[600]
     8. 导出 jsons-GD：[否 | 是 --export]
     ```
@@ -182,8 +182,15 @@ description: >-
   **(2)** 失败占位（`source=failed` / timeout）续跑时**不要** `--force`，`is_placeholder_desc` 会重试。
   **(3)** 每完成 crop / describe / caption 更新台账 phase 与 Checklist。
   **(4)** 仅当填空第 8 项为「是」时加 `--export`。
+  **(5)** `--workers` 必须传给 `generate.py`（默认 4）。`caption_dataset` 按图级 `ThreadPoolExecutor` 并发；已有 `draft/captions/*.json` 且非 `--force` 会跳过。
 
   - **注意**：`--no_llm` 只许调试，禁止用于正式数据。
+  - **注意（caption 并发）**：
+    - 一张图仍串行打 `n_captions` 次（默认 5 条 `client.text()`），提速靠**多图并行**，不是图内并行。
+    - `vllm_client._CALL_GATE` 默认最多 6 路在途；workers 用 4，不要自行加到十几路。
+    - `exhaustive=false`（如 flickr）时 describe 全部结束后才 caption，流水线不会提前排队。
+    - 旧版 caption 是单线程 `for`，全量会到一天量级；漏传 `--workers` 会退回很慢。
+    - 只加速 caption、crop/describe 已完成：停掉旧进程后**不**加 `--force` 再跑同一命令即可。
 
 ---
 
@@ -193,7 +200,7 @@ description: >-
 
   | 分类 | 工具路径 | 用途 |
   | --- | --- | --- |
-  | 生成 | `util/generate.py` | check → crop → describe(+policy) → caption → 可选 export |
+  | 生成 | `util/generate.py` | check → crop → describe(+policy) → caption → 可选 export；`--workers` 同时给 describe 与 caption |
   | 入口 | `0-generate.sh` | Linux 改 `dataset` / `rules_scene` 后 bash |
   | 服务 | `model/server.json` | 服务列表；`default: true` |
   | 规则 | `rules/scenes.json` | scene 策略：条数 / 禁子类 / exhaustive / coverage |
@@ -209,7 +216,7 @@ description: >-
     conda activate yulin   # Linux 用 qwen
     export PYTHONUTF8=1
     cd "$GROUNDING_ROOT"
-    python util/generate.py --dataset "<data_root>" --rules-scene appearance --limit 1
+    python util/generate.py --dataset "<data_root>" --rules-scene appearance --limit 1 --workers 4
     ```
 
   - **注意**：空 `--base_url` / `--model` 时读 `server.json` 的 default。先确认 `/v1/models` 可达再开全量。
