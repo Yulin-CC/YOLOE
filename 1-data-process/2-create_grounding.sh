@@ -29,6 +29,6 @@ python util/create_grounding.py \
 #---------------#
 # Step 2：train_segm.json → train_segm.cache（供 GroundingDataset 训练）
 #---------------#
-python tools/generate_grounding_cache.py \
+python tools/generate_grounding_cache.py  \
     --json-path "${Path}/train_segm.json" \
     --img-path  "${Path}/images"
