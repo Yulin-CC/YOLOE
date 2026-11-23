@@ -28,9 +28,7 @@ config/vocab/*.json
 *.cache
 
 # Agent 工作目录（本机路径 / 实验结果）
-# 整目录忽略，但操作卡 SKILL.md 要入库
-0-Agent-demo/*
-!0-Agent-demo/SKILL.md
+0-Agent-demo/
 
 # 复核服务上传与任务落盘
 3-review_server/data/
