@@ -159,6 +159,10 @@ description: >-
   - 已跑通的包装：`0-Agent-demo/_demo_train/image-261113-smartsecurity-yoloe-v1/util/0-eval.sh`，配置 `util/eval-gd02.yaml`。2026-11-16 v1.0 `best.pt` 的框 AP 0.368、AP50 0.453、APr 0.376、APc 0.300、APf 0.366。掩膜 AP 0.002。json 里 20090 条标注有 20083 条 polygon 多于 4 个点。预测写进 LVIS 的掩膜 RLE 尺寸是 360×640，框坐标是原图像素，两边坐标系不一致，这次掩膜 AP 不能用。
   - 短语数量和 demo6 的 384 不同，不要把 0.453 直接当成没达到 0.536。
 
+  - **不要拿 gd02 VAL 横向比不同训练版本**：这套 val 的 1738 条短语 97.8% 带冠词，而训练用的 grounding 语料写法各不相同。实查短语重合：用 gd02 训的版本重合 81%，用 gd03 的 66%，用 gd04（gqa，不带冠词）的只有 1.7%。所以在这套 val 上，训练语料是 gd02 的版本会显著偏高，那是背过考题，不是模型更强。
+  - 另注意 gd02 / gd03 / gd04 的 `images/` 是**同一批图**，只是 caption 规则不同。选开集评测集时不要以为换了目录名就是换了数据。
+  - 要做版本间公平对比，得用三版都没训过的开集数据（如 gd01 4685 张），并重新生成 `lvis_v1_val.json` 和短语表。
+
   **闭集终验 val**（表上 v2 到 v6 那一列，v6 框 mAP50 0.622 是这套）
 
   - 23 个类，id 顺序跟 `data/train-yolo_dataset/Selfcollect-smartsecurity.yaml` 的 `names` 一致，从 `person` 到 `drone`。
