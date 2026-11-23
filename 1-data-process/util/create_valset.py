@@ -192,7 +192,15 @@ def write_lvis_json(root: Path, image_names: list[str], per_image: dict, phrases
         else:
             with Image.open(root / "images" / name) as im:
                 w, h = im.size
-        images.append({"id": img_id, "file_name": name, "width": w, "height": h})
+        pos_ids = {name_to_id[rec["phrase"]] + 1 for rec in recs}
+        images.append({
+            "id": img_id,
+            "file_name": name,
+            "width": w,
+            "height": h,
+            "neg_category_ids": [],
+            "not_exhaustive_category_ids": [i for i in range(1, len(phrases) + 1) if i not in pos_ids],
+        })
         for rec in recs:
             bbox = rec["bbox"]
             if len(bbox) < 4:
