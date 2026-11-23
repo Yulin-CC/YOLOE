@@ -21,6 +21,9 @@ weights/
 *.onnx
 *.engine
 
+# 词表由 1-data-process/4-create_vocab_pt.sh 生成，不入库
+config/vocab/*.json
+
 # Grounding 训练 cache
 *.cache
 
